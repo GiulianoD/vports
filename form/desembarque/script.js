@@ -1,4 +1,7 @@
 // script.js
+// Array para armazenar as imagens selecionadas
+let uploadedImages = [];
+
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar o formulário
     initForm();
@@ -8,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('dataFimPesca').addEventListener('change', calcularEsforco);
     
     // Adicionar event listener para preview de imagens
-    document.getElementById('imagens').addEventListener('change', previewImagens);
+    document.getElementById('imagens').addEventListener('change', handleImageUpload);
     
     // Adicionar event listener para o envio do formulário
     document.getElementById('desembarqueForm').addEventListener('submit', handleSubmit);
@@ -43,6 +46,9 @@ function initForm() {
         option.textContent = cidade;
         selectLocal.appendChild(option);
     });
+    
+    // Atualizar preview de imagens
+    updateImagePreview();
 }
 
 // Adicionar linha à tabela de espécies
@@ -121,38 +127,83 @@ function calcularEsforco() {
     }
 }
 
-// Pré-visualizar imagens selecionadas
-function previewImagens(event) {
-    const previewContainer = document.getElementById('previewContainer');
-    previewContainer.innerHTML = '';
-    
+// Processar upload de imagens
+function handleImageUpload(event) {
     const files = event.target.files;
     
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
         if (file.type.match('image.*')) {
-            const reader = new FileReader();
+            // Verificar se a imagem já foi adicionada
+            const isDuplicate = uploadedImages.some(img => 
+                img.name === file.name && img.size === file.size
+            );
             
-            reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.classList.add('preview-image');
-                previewContainer.appendChild(img);
-            };
-            
-            reader.readAsDataURL(file);
+            if (!isDuplicate) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    uploadedImages.push({
+                        id: Date.now() + i, // ID único
+                        name: file.name,
+                        size: file.size,
+                        data: e.target.result
+                    });
+                    
+                    updateImagePreview();
+                };
+                
+                reader.readAsDataURL(file);
+            }
         }
     }
+    
+    // Limpar o input de arquivo para permitir selecionar os mesmos arquivos novamente
+    event.target.value = '';
+}
+
+// Atualizar preview de imagens
+function updateImagePreview() {
+    const previewContainer = document.getElementById('previewContainer');
+    previewContainer.innerHTML = '';
+    
+    if (uploadedImages.length === 0) {
+        previewContainer.innerHTML = '<div class="no-images">Nenhuma imagem selecionada</div>';
+        return;
+    }
+    
+    uploadedImages.forEach(image => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.dataset.id = image.id;
+        
+        previewItem.innerHTML = `
+            <img src="${image.data}" alt="${image.name}" class="preview-image">
+            <div class="preview-info">${image.name}</div>
+            <button type="button" class="btn-delete-image" onclick="deleteImage(${image.id})" title="Remover imagem">×</button>
+        `;
+        
+        previewContainer.appendChild(previewItem);
+    });
+}
+
+// Deletar imagem
+function deleteImage(imageId) {
+    uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+    updateImagePreview();
 }
 
 // Limpar formulário
 function clearForm() {
     if (confirm('Tem certeza que deseja limpar todos os campos?')) {
         document.getElementById('desembarqueForm').reset();
-        document.getElementById('previewContainer').innerHTML = '';
         document.getElementById('outroDestinacaoContainer').classList.add('hidden');
         document.getElementById('outroArtePescaContainer').classList.add('hidden');
+        
+        // Limpar imagens
+        uploadedImages = [];
+        updateImagePreview();
         
         // Manter apenas uma linha na tabela de espécies
         const table = document.getElementById('especiesTable').getElementsByTagName('tbody')[0];
@@ -187,6 +238,13 @@ function handleSubmit(event) {
                 data[key] = value;
             }
         }
+        
+        // Adicionar informações das imagens
+        data.imagens = uploadedImages.map(img => ({
+            name: img.name,
+            size: img.size
+            // Em um ambiente real, você enviaria o arquivo real, não o data URL
+        }));
         
         console.log('Dados do formulário:', data);
         alert('Formulário enviado com sucesso! Verifique o console para ver os dados.');

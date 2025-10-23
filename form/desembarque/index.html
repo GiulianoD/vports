@@ -76,7 +76,7 @@
                         <option value="Consumo próprio">Consumo próprio</option>
                         <option value="Doação">Doação</option>
                         <option value="Indústria">Indústria</option>
-                        <option value="Outro">Outro</option>
+                        <option value="Outro">Outro (Especifique)</option>
                     </select>
                     <div id="outroDestinacaoContainer" class="hidden">
                         <input type="text" id="outroDestinacao" name="outroDestinacao" placeholder="Especifique a destinação">
@@ -97,7 +97,7 @@
                         <option value="Rede de arrasto">Rede de arrasto</option>
                         <option value="Linha com anzol e isca">Linha com anzol e isca</option>
                         <option value="Puça">Puça</option>
-                        <option value="Outro">Outro</option>
+                        <option value="Outro">Outro (Especifique)</option>
                     </select>
                     <div id="outroArtePescaContainer" class="hidden">
                         <input type="text" id="outroArtePesca" name="outroArtePesca" placeholder="Especifique a arte de pesca">
@@ -153,8 +153,14 @@
                 
                 <div class="form-group">
                     <label for="imagens">Imagens</label>
-                    <input type="file" id="imagens" name="imagens" multiple accept="image/*">
-                    <div id="previewContainer"></div>
+                    <div class="file-upload-container">
+                        <input type="file" id="imagens" name="imagens" multiple accept="image/*" class="file-input">
+                        <label for="imagens" class="file-label">
+                            <span class="file-icon">📁</span>
+                            <span class="file-text">Selecionar imagens</span>
+                        </label>
+                    </div>
+                    <div id="previewContainer" class="preview-container"></div>
                 </div>
                 
                 <div class="form-group">
@@ -170,24 +176,6 @@
         </form>
     </div>
 
-    <script>
-        // Função para obter o timestamp atual
-        function getTimestamp() {
-            return new Date().getTime();
-        }
-
-        // Adicionando o timestamp aos scripts para evitar cache
-        const scripts = [
-            "script.js"
-        ];
-
-        scripts.forEach(script => {
-            const scriptElement = document.createElement('script');
-            scriptElement.src = script + '?v=' + getTimestamp();
-            // document.head.appendChild(scriptElement);
-            scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
-            document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
