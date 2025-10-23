@@ -1,9 +1,13 @@
- - instalar pacotes utilizados no projeto
+instalar pacotes utilizados no projeto<br> 
+```
 npm install
 npm fund
-
- - executar ambiente de teste
+```
+executar ambiente de teste<br>
+```
 npm run dev
-
- - executar embiente de produção
+```
+executar embiente de produção
+```
 npm start
+```
