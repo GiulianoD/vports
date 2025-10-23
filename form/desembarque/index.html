@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Desembarque Pesqueiro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Registro de Desembarque Pesqueiro</h1>
+            <p>Preencha os dados do desembarque da pesca artesanal</p>
+        </header>
+
+        <form id="desembarqueForm">
+            <div class="form-section">
+                <h2>Dados Básicos</h2>
+                
+                <div class="form-group">
+                    <label for="embarcacao">Embarcação *</label>
+                    <select id="embarcacao" name="embarcacao" required>
+                        <option value="">Selecione uma embarcação</option>
+                        <option value="Embarcação 1">Embarcação 1</option>
+                        <option value="Embarcação 2">Embarcação 2</option>
+                        <option value="Embarcação 3">Embarcação 3</option>
+                        <option value="Embarcação 4">Embarcação 4</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dataDesembarque">Data do Desembarque *</label>
+                    <input type="date" id="dataDesembarque" name="dataDesembarque" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="localDesembarque">Local do Desembarque *</label>
+                    <select id="localDesembarque" name="localDesembarque" required>
+                        <option value="">Selecione uma cidade</option>
+                        <!-- As opções serão preenchidas via JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Captura</h2>
+                
+                <div class="form-group">
+                    <label>Espécies Capturadas</label>
+                    <div class="table-container">
+                        <table id="especiesTable">
+                            <thead>
+                                <tr>
+                                    <th>Espécie</th>
+                                    <th>Quantidade (Kg)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" name="especie[]" placeholder="Nome da espécie"></td>
+                                    <td><input type="number" name="quantidade[]" min="0" step="0.1" placeholder="Kg"></td>
+                                    <td><button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn-add" onclick="addRow()">Adicionar Espécie</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="destinacao">Destinação *</label>
+                    <select id="destinacao" name="destinacao" required onchange="toggleOutroDestinacao()">
+                        <option value="">Selecione uma opção</option>
+                        <option value="Venda local">Venda local</option>
+                        <option value="Consumo próprio">Consumo próprio</option>
+                        <option value="Doação">Doação</option>
+                        <option value="Indústria">Indústria</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <div id="outroDestinacaoContainer" class="hidden">
+                        <input type="text" id="outroDestinacao" name="outroDestinacao" placeholder="Especifique a destinação">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Informações da Pesca</h2>
+                
+                <div class="form-group">
+                    <label for="artePesca">Arte de Pesca *</label>
+                    <select id="artePesca" name="artePesca" required onchange="toggleOutroArtePesca()">
+                        <option value="">Selecione uma opção</option>
+                        <option value="Rede emalhar de fundo">Rede emalhar de fundo</option>
+                        <option value="Rede emalhar de meia água">Rede emalhar de meia água</option>
+                        <option value="Rede emalhar de superfície">Rede emalhar de superfície</option>
+                        <option value="Rede de arrasto">Rede de arrasto</option>
+                        <option value="Linha com anzol e isca">Linha com anzol e isca</option>
+                        <option value="Puça">Puça</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                    <div id="outroArtePescaContainer" class="hidden">
+                        <input type="text" id="outroArtePesca" name="outroArtePesca" placeholder="Especifique a arte de pesca">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dataSaida">Data de Saída *</label>
+                        <input type="datetime-local" id="dataSaida" name="dataSaida" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dataRetorno">Data de Retorno *</label>
+                        <input type="datetime-local" id="dataRetorno" name="dataRetorno" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dataInicioPesca">Data de Início da Pesca *</label>
+                        <input type="datetime-local" id="dataInicioPesca" name="dataInicioPesca" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dataFimPesca">Data de Fim da Pesca *</label>
+                        <input type="datetime-local" id="dataFimPesca" name="dataFimPesca" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="esforco">Esforço (horas)</label>
+                    <input type="text" id="esforco" name="esforco" readonly>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Localização</h2>
+                
+                <div class="form-group">
+                    <label for="localPesca">Local de Pesca (Código FAO)</label>
+                    <input type="text" id="localPesca" name="localPesca" placeholder="Ex: 41">
+                </div>
+                
+                <div class="form-group">
+                    <label for="coordenadas">Coordenadas</label>
+                    <input type="text" id="coordenadas" name="coordenadas" placeholder="Ex: -18°S, -39°W">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Documentação</h2>
+                
+                <div class="form-group">
+                    <label for="imagens">Imagens</label>
+                    <input type="file" id="imagens" name="imagens" multiple accept="image/*">
+                    <div id="previewContainer"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observacoes">Observações</label>
+                    <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações adicionais"></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-clear" onclick="clearForm()">Limpar</button>
+                <button type="submit" class="btn-submit">Enviar Registro</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Função para obter o timestamp atual
+        function getTimestamp() {
+            return new Date().getTime();
+        }
+
+        // Adicionando o timestamp aos scripts para evitar cache
+        const scripts = [
+            "script.js"
+        ];
+
+        scripts.forEach(script => {
+            const scriptElement = document.createElement('script');
+            scriptElement.src = script + '?v=' + getTimestamp();
+            // document.head.appendChild(scriptElement);
+            scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
+            document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
+        });
+    </script>
+</body>
+</html>
