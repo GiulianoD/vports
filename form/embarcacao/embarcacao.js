@@ -21,6 +21,9 @@
   const btnLimpar = document.getElementById("btnLimpar");
   const btnRascunho = document.getElementById("btnRascunho");
 
+  // Array para armazenar os arquivos selecionados
+  let uploadedFiles = [];
+
   /* ---------- Mostrar "Outro" ---------- */
   function toggleOutro(selectEl, containerId) {
     const container = containerId === "casco" ? outroTipoCascoContainer : outroTipoPropulsaoContainer;
@@ -59,36 +62,87 @@
   uf.addEventListener("change", () => popularMunicipios(uf.value));
 
   /* ---------- Preview de anexos ---------- */
-  function previewArquivos(files) {
-    anexosPreview.innerHTML = "";
-    if (!files || !files.length) return;
-
-    [...files].forEach(file => {
-      const fig = document.createElement("figure");
-      fig.className = "preview-thumb";
-
-      if (file.type.startsWith("image/")) {
+  function handleFileUpload(event) {
+    const files = event.target.files;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Verificar se o arquivo já foi adicionado
+      const isDuplicate = uploadedFiles.some(f => 
+        f.name === file.name && f.size === file.size
+      );
+      
+      if (!isDuplicate) {
         const reader = new FileReader();
-        reader.onload = e => {
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          img.alt = file.name;
-          fig.appendChild(img);
-          const cap = document.createElement("figcaption");
-          cap.textContent = file.name;
-          fig.appendChild(cap);
-          anexosPreview.appendChild(fig);
+        
+        reader.onload = function(e) {
+          uploadedFiles.push({
+            id: Date.now() + i, // ID único
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: e.target.result
+          });
+          
+          updateFilePreview();
         };
+        
         reader.readAsDataURL(file);
-      } else {
-        const cap = document.createElement("figcaption");
-        cap.textContent = file.name;
-        fig.appendChild(cap);
-        anexosPreview.appendChild(fig);
       }
+    }
+    
+    // Limpar o input de arquivo para permitir selecionar os mesmos arquivos novamente
+    event.target.value = '';
+  }
+
+  // Atualizar preview de arquivos
+  function updateFilePreview() {
+    anexosPreview.innerHTML = '';
+    
+    if (uploadedFiles.length === 0) {
+      anexosPreview.innerHTML = '<div class="no-images">Nenhum arquivo selecionado</div>';
+      return;
+    }
+    
+    uploadedFiles.forEach(file => {
+      const previewItem = document.createElement('div');
+      previewItem.className = 'preview-item';
+      previewItem.dataset.id = file.id;
+      
+      let content = '';
+      
+      if (file.type.startsWith('image/')) {
+        content = `
+          <img src="${file.data}" alt="${file.name}" class="preview-image">
+          <div class="preview-info">${file.name}</div>
+        `;
+      } else {
+        // Para arquivos PDF ou outros documentos
+        content = `
+          <div class="preview-document">
+            <div class="document-icon">📄</div>
+            <div class="preview-info">${file.name}</div>
+          </div>
+        `;
+      }
+      
+      previewItem.innerHTML = content + `
+        <button type="button" class="btn-delete-image" onclick="deleteFile(${file.id})" title="Remover arquivo">×</button>
+      `;
+      
+      anexosPreview.appendChild(previewItem);
     });
   }
-  anexos.addEventListener("change", e => previewArquivos(e.target.files));
+
+  // Deletar arquivo
+  window.deleteFile = function(fileId) {
+    uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+    updateFilePreview();
+  };
+
+  // Adicionar event listener para upload de arquivos
+  anexos.addEventListener('change', handleFileUpload);
 
   /* ---------- Máscara/ajuste simples RGP (opcional leve) ---------- */
   const rgp = document.getElementById("rgp");
@@ -147,6 +201,15 @@
         obj[k] = v;
       }
     }
+    
+    // Salvar informações básicas dos arquivos (sem os dados binários)
+    obj.uploadedFilesInfo = uploadedFiles.map(file => ({
+      id: file.id,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }));
+    
     localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
     alert("Rascunho salvo!");
   }
@@ -163,10 +226,18 @@
       }
       // Demais campos
       Object.entries(obj).forEach(([k, v]) => {
+        if (k === "uploadedFilesInfo") return; // Trataremos isso separadamente
+        
         const el = form.elements[k];
         if (!el) return;
         el.value = v;
       });
+
+      // Restaurar informações dos arquivos (apenas a lista, não os dados)
+      if (obj.uploadedFilesInfo) {
+        uploadedFiles = obj.uploadedFilesInfo;
+        updateFilePreview();
+      }
 
       // Mostrar campos "Outro" conforme seleção
       toggleOutro(tipoCasco, "casco");
@@ -182,7 +253,8 @@
     form.reset();
     localStorage.removeItem(DRAFT_KEY);
     municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    anexosPreview.innerHTML = "";
+    uploadedFiles = [];
+    updateFilePreview();
     outroTipoCascoContainer.classList.add("hidden");
     outroTipoPropulsaoContainer.classList.add("hidden");
   });
@@ -209,7 +281,15 @@
       }
     });
 
-    console.log("Payload JSON (sem anexos):", json);
+    // Adicionar informações dos arquivos
+    json.arquivos = uploadedFiles.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type
+      // Em um ambiente real, você enviaria o arquivo real, não apenas as informações
+    }));
+
+    console.log("Payload JSON:", json);
     // Exemplo POST real:
     // await fetch('/api/embarcacoes', { method: 'POST', body: fd });
 
@@ -218,7 +298,8 @@
     localStorage.removeItem(DRAFT_KEY);
     form.reset();
     municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    anexosPreview.innerHTML = "";
+    uploadedFiles = [];
+    updateFilePreview();
     outroTipoCascoContainer.classList.add("hidden");
     outroTipoPropulsaoContainer.classList.add("hidden");
   });

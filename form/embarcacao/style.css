@@ -238,6 +238,7 @@ th {
     overflow: hidden;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: transform 0.3s;
+    background-color: #f8f9fa;
 }
 
 .preview-item:hover {
@@ -251,6 +252,20 @@ th {
     display: block;
 }
 
+.preview-document {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 150px;
+    padding: 15px;
+}
+
+.document-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
 .preview-info {
     padding: 8px;
     background-color: #f8f9fa;
@@ -259,6 +274,8 @@ th {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
+    width: 100%;
 }
 
 .no-images {

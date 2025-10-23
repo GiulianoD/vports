@@ -127,8 +127,14 @@
         <h2>Documentos / Imagens (opcional)</h2>
         <div class="form-group">
           <label for="anexos">Arquivos</label>
-          <input type="file" id="anexos" name="anexos" multiple accept="image/*,.pdf">
-          <div id="anexosPreview"></div>
+          <div class="file-upload-container">
+            <input type="file" id="anexos" name="anexos" multiple accept="image/*,.pdf" class="file-input">
+            <label for="anexos" class="file-label">
+              <span class="file-icon">📁</span>
+              <span class="file-text">Selecionar documentos/imagens</span>
+            </label>
+          </div>
+          <div id="anexosPreview" class="preview-container"></div>
         </div>
       </div>
 
