@@ -1,6 +1,7 @@
 // script.js
 // Array para armazenar as imagens selecionadas
 let uploadedImages = [];
+let embarcacoesList = []; // Array para armazenar a lista de embarcações
 
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar o formulário
@@ -15,7 +16,99 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Adicionar event listener para o envio do formulário
     document.getElementById('desembarqueForm').addEventListener('submit', handleSubmit);
+    
+    // Carregar embarcações do banco de dados
+    carregarEmbarcacoes();
 });
+
+// Carregar embarcações do banco de dados
+async function carregarEmbarcacoes() {
+    const selectEmbarcacao = document.getElementById('embarcacao');
+    
+    try {
+        console.log('Carregando embarcações...');
+        const response = await fetch('/api/embarcacoes-ativas');
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            embarcacoesList = data.data;
+            console.log(`✅ ${embarcacoesList.length} embarcações carregadas`);
+            preencherSelectEmbarcacoes();
+        } else {
+            console.error('❌ Erro ao carregar embarcações:', data.message);
+            preencherEmbarcacoesFallback('Erro ao carregar embarcações');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar embarcações:', error);
+        preencherEmbarcacoesFallback('Erro de conexão');
+    }
+}
+
+// Preencher o select de embarcações com dados do banco
+function preencherSelectEmbarcacoes() {
+    const selectEmbarcacao = document.getElementById('embarcacao');
+    
+    // Limpar todas as opções existentes
+    selectEmbarcacao.innerHTML = '';
+    
+    // Adicionar opção padrão
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Selecione uma embarcação';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    selectEmbarcacao.appendChild(defaultOption);
+    
+    // Adicionar embarcações do banco de dados
+    embarcacoesList.forEach(embarcacao => {
+        const option = document.createElement('option');
+        option.value = embarcacao.id;
+        option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
+        selectEmbarcacao.appendChild(option);
+    });
+    
+    // Se não houver embarcações, mostrar mensagem
+    if (embarcacoesList.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Nenhuma embarcação cadastrada';
+        option.disabled = true;
+        selectEmbarcacao.appendChild(option);
+    }
+}
+
+// Fallback em caso de erro na API
+function preencherEmbarcacoesFallback(mensagemErro) {
+    const selectEmbarcacao = document.getElementById('embarcacao');
+    
+    // Limpar todas as opções
+    selectEmbarcacao.innerHTML = '';
+    
+    // Adicionar opção de erro
+    const errorOption = document.createElement('option');
+    errorOption.value = '';
+    errorOption.textContent = `${mensagemErro} - Use opções estáticas`;
+    errorOption.disabled = true;
+    errorOption.selected = true;
+    selectEmbarcacao.appendChild(errorOption);
+    
+    // Adicionar opções estáticas como fallback
+    const opcoesEstaticas = [
+        { id: 'fallback-1', nome: "N/A", rgp: "000" }
+    ];
+    
+    opcoesEstaticas.forEach(embarcacao => {
+        const option = document.createElement('option');
+        option.value = embarcacao.id;
+        option.textContent = `${embarcacao.nome} (${embarcacao.rgp})`;
+        selectEmbarcacao.appendChild(option);
+    });
+}
 
 // Inicializar o formulário
 function initForm() {

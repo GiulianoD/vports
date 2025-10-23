@@ -320,6 +320,39 @@ app.patch('/api/embarcacoes/:id/status', async (req, res) => {
   }
 });
 
+// Adicione esta rota específica para o formulário de desembarque, se necessário
+app.get('/api/embarcacoes-ativas', async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+    
+    // Se você quiser filtrar apenas embarcações com status específico, modifique a query
+    const query = `
+      SELECT id, nome_embarcacao, rgp, status 
+      FROM embarcacoes 
+      WHERE status = 'approved' -- ou remova este filtro para todas
+      ORDER BY nome_embarcacao
+    `;
+    
+    const result = await client.query(query);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar embarcações ativas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
 // Rota placeholder para desembarques
 app.get('/api/desembarques', async (req, res) => {
   res.json({
