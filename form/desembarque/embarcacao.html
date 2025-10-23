@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Embarcação</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Cadastro de Embarcação</h1>
+      <p>Preencha os dados básicos da embarcação para registro</p>
+    </header>
+
+    <form id="embarcacaoForm">
+      <!-- DADOS BÁSICOS -->
+      <div class="form-section">
+        <h2>Dados Básicos</h2>
+
+        <div class="form-group">
+          <label for="nomeEmbarcacao">Nome da Embarcação *</label>
+          <input type="text" id="nomeEmbarcacao" name="nomeEmbarcacao" required placeholder="Ex: Nossa Senhora do Mar">
+        </div>
+
+        <div class="form-group">
+          <label for="rgp">Registro Geral da Pesca (RGP) *</label>
+          <input type="text" id="rgp" name="rgp" required placeholder="Ex: 123456-7">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tipoCasco">Tipo de Casco *</label>
+            <select id="tipoCasco" name="tipoCasco" required>
+              <option value="">Selecione</option>
+              <option>Madeira</option>
+              <option>Fibra</option>
+              <option>Aço</option>
+              <option>Alumínio</option>
+              <option value="Outro">Outro</option>
+            </select>
+            <div id="outroTipoCascoContainer" class="hidden">
+              <input type="text" id="outroTipoCasco" name="outroTipoCasco" placeholder="Especifique o tipo de casco">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="arqueacaoBruta">Arqueação Bruta (AB) *</label>
+            <input type="number" id="arqueacaoBruta" name="arqueacaoBruta" min="0" step="0.01" required placeholder="Ex: 12.5">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tipoPropulsao">Tipo de Propulsão *</label>
+            <select id="tipoPropulsao" name="tipoPropulsao" required>
+              <option value="">Selecione</option>
+              <option>Motor</option>
+              <option>Vela</option>
+              <option>Remo</option>
+              <option>Mista</option>
+              <option value="Outro">Outro</option>
+            </select>
+            <div id="outroTipoPropulsaoContainer" class="hidden">
+              <input type="text" id="outroTipoPropulsao" name="outroTipoPropulsao" placeholder="Especifique a propulsão">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="portoBase">Porto Base *</label>
+            <input type="text" id="portoBase" name="portoBase" required placeholder="Ex: Porto de Vitória">
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCALIZAÇÃO / INSCRIÇÃO -->
+      <div class="form-section">
+        <h2>Localização / Inscrição</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="uf">Estado de Inscrição (UF) *</label>
+            <select id="uf" name="uf" required>
+              <option value="">Selecione</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+              <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+              <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+              <option>SP</option><option>SE</option><option>TO</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="municipio">Município *</label>
+            <select id="municipio" name="municipio" required>
+              <option value="">Selecione a UF primeiro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESPONSÁVEL -->
+      <div class="form-section">
+        <h2>Responsável</h2>
+
+        <div class="form-group">
+          <label for="responsavel">Responsável pela Embarcação *</label>
+          <input type="text" id="responsavel" name="responsavel" required placeholder="Nome completo">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="contato">Contato (telefone/email)</label>
+            <input type="text" id="contato" name="contato" placeholder="(27) 99999-0000 • email@exemplo.com">
+          </div>
+          <div class="form-group">
+            <label for="observacoes">Observações</label>
+            <input type="text" id="observacoes" name="observacoes" placeholder="Informações adicionais relevantes">
+          </div>
+        </div>
+      </div>
+
+      <!-- ANEXOS (opcional) -->
+      <div class="form-section">
+        <h2>Documentos / Imagens (opcional)</h2>
+        <div class="form-group">
+          <label for="anexos">Arquivos</label>
+          <input type="file" id="anexos" name="anexos" multiple accept="image/*,.pdf">
+          <div id="anexosPreview"></div>
+        </div>
+      </div>
+
+      <!-- AÇÕES -->
+      <div class="form-actions">
+        <button type="button" class="btn-clear" id="btnLimpar">Limpar</button>
+        <button type="button" class="btn-add" id="btnRascunho">Salvar rascunho</button>
+        <button type="submit" class="btn-submit">Cadastrar Embarcação</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Carregador de scripts (sem document.write) -->
+  <script>
+    (function loadScripts() {
+      const version = new Date().getTime(); // cache-bust
+      const scripts = ["embarcacao.js"];
+      (async () => {
+        for (const src of scripts) {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = `${src}?v=${version}`;
+            s.async = false;
+            s.onload = resolve;
+            s.onerror = reject;
+            document.body.appendChild(s);
+          });
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
