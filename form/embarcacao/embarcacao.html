@@ -147,24 +147,18 @@
     </form>
   </div>
 
-  <!-- Carregador de scripts (sem document.write) -->
   <script>
-    (function loadScripts() {
-      const version = new Date().getTime(); // cache-bust
+    document.addEventListener('DOMContentLoaded', function() {
+      const version = new Date().getTime();
       const scripts = ["embarcacao.js"];
-      (async () => {
-        for (const src of scripts) {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src = `${src}?v=${version}`;
-            s.async = false;
-            s.onload = resolve;
-            s.onerror = reject;
-            document.body.appendChild(s);
-          });
-        }
-      })();
-    })();
+      
+      scripts.forEach(src => {
+        const s = document.createElement("script");
+        s.src = `${src}?v=${version}`;
+        s.async = false;
+        document.body.appendChild(s);
+      });
+    });
   </script>
 </body>
 </html>

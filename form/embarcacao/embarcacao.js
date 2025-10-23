@@ -160,29 +160,20 @@
   function validarCampos() {
     const nome = document.getElementById("nomeEmbarcacao").value.trim();
     if (!nome) return "Informe o Nome da Embarcação.";
-
+  
     const rgpVal = rgp.value.trim();
     if (!rgpVal || !/^\d{6}-?\d$/.test(rgpVal)) return "Informe um RGP válido (formato esperado: 6 dígitos + 1 dígito verificador, ex: 123456-7).";
-
-    if (tipoCasco.value === "Outro") {
-      const outro = document.getElementById("outroTipoCasco").value.trim();
-      if (!outro) return "Especifique o Tipo de Casco (Outro).";
-    }
-
-    if (tipoPropulsao.value === "Outro") {
-      const outro = document.getElementById("outroTipoPropulsao").value.trim();
-      if (!outro) return "Especifique o Tipo de Propulsão (Outro).";
-    }
-
+  
+    // Removida a validação dos campos "Outro"
     const ab = Number(document.getElementById("arqueacaoBruta").value);
     if (Number.isNaN(ab) || ab < 0) return "Arqueação Bruta deve ser um número válido (≥ 0).";
-
+  
     if (!uf.value) return "Selecione a UF.";
     if (!municipio.value) return "Selecione o Município.";
-
+  
     const resp = document.getElementById("responsavel").value.trim();
     if (!resp) return "Informe o Responsável pela Embarcação.";
-
+  
     return null;
   }
 
@@ -232,13 +223,13 @@
         if (!el) return;
         el.value = v;
       });
-
+  
       // Restaurar informações dos arquivos (apenas a lista, não os dados)
       if (obj.uploadedFilesInfo) {
         uploadedFiles = obj.uploadedFilesInfo;
         updateFilePreview();
       }
-
+  
       // Mostrar campos "Outro" conforme seleção
       toggleOutro(tipoCasco, "casco");
       toggleOutro(tipoPropulsao, "prop");
@@ -259,6 +250,7 @@
     outroTipoPropulsaoContainer.classList.add("hidden");
   });
 
+  /* ---------- Evento de Submit ATUALIZADO ---------- */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -268,40 +260,53 @@
       return;
     }
 
-    // Monta payload (JSON demonstrativo sem arquivos)
-    const fd = new FormData(form);
-    const json = {};
-    fd.forEach((v, k) => {
-      if (k === "anexos") return;
-      if (json[k]) {
-        if (!Array.isArray(json[k])) json[k] = [json[k]];
-        json[k].push(v);
+    try {
+      // Criar FormData para enviar arquivos
+      const formData = new FormData(form);
+      
+      // Adicionar arquivos selecionados
+      uploadedFiles.forEach(file => {
+        // Converter data URL para blob
+        if (file.data.startsWith('data:')) {
+          const byteString = atob(file.data.split(',')[1]);
+          const mimeString = file.data.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          formData.append('anexos', blob, file.name);
+        }
+      });
+
+      // Enviar para o backend
+      const response = await fetch('http://localhost:3000/api/embarcacoes', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("Embarcação cadastrada com sucesso!");
+        
+        // Limpar formulário
+        localStorage.removeItem(DRAFT_KEY);
+        form.reset();
+        municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+        uploadedFiles = [];
+        updateFilePreview();
+        outroTipoCascoContainer.classList.add("hidden");
+        outroTipoPropulsaoContainer.classList.add("hidden");
       } else {
-        json[k] = v;
+        alert("Erro ao cadastrar embarcação: " + result.message);
       }
-    });
 
-    // Adicionar informações dos arquivos
-    json.arquivos = uploadedFiles.map(file => ({
-      name: file.name,
-      size: file.size,
-      type: file.type
-      // Em um ambiente real, você enviaria o arquivo real, não apenas as informações
-    }));
-
-    console.log("Payload JSON:", json);
-    // Exemplo POST real:
-    // await fetch('/api/embarcacoes', { method: 'POST', body: fd });
-
-    alert("Embarcação cadastrada com sucesso! (simulado)");
-
-    localStorage.removeItem(DRAFT_KEY);
-    form.reset();
-    municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    uploadedFiles = [];
-    updateFilePreview();
-    outroTipoCascoContainer.classList.add("hidden");
-    outroTipoPropulsaoContainer.classList.add("hidden");
+    } catch (error) {
+      console.error('Erro:', error);
+      alert("Erro ao conectar com o servidor");
+    }
   });
 
   /* ---------- Init ---------- */
