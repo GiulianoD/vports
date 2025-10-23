@@ -87,7 +87,7 @@ async function initializeDatabase() {
   }
 }
 
-// Criar tabela no PostgreSQL
+// Criar tabela no PostgreSQL COM OS CAMPOS DE STATUS
 async function createTable() {
   try {
     const query = `
@@ -105,6 +105,9 @@ async function createTable() {
         contato TEXT,
         observacoes TEXT,
         anexos JSONB,
+        status VARCHAR(20) DEFAULT 'pending',
+        review_note TEXT,
+        reviewed_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
@@ -174,8 +177,8 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
         nome_embarcacao, rgp, tipo_casco, 
         arqueacao_bruta, tipo_propulsao, 
         porto_base, uf, municipio, responsavel, contato, 
-        observacoes, anexos
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        observacoes, anexos, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -191,7 +194,8 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
       responsavel,
       contato || null,
       observacoes || null,
-      anexosData.length > 0 ? JSON.stringify(anexosData) : null
+      anexosData.length > 0 ? JSON.stringify(anexosData) : null,
+      'pending' // Status inicial
     ];
 
     const result = await client.query(query, values);
@@ -272,6 +276,59 @@ app.get('/api/embarcacoes/:id', async (req, res) => {
   }
 });
 
+// Rota para atualizar status da embarcação
+app.patch('/api/embarcacoes/:id/status', async (req, res) => {
+  let client;
+  try {
+    const { id } = req.params;
+    const { status, review_note } = req.body;
+    
+    client = await pool.connect();
+    
+    const query = `
+      UPDATE embarcacoes 
+      SET status = $1, review_note = $2, reviewed_at = CURRENT_TIMESTAMP 
+      WHERE id = $3 
+      RETURNING *
+    `;
+    
+    const result = await client.query(query, [status, review_note, id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Embarcação não encontrada'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Status atualizado com sucesso',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota placeholder para desembarques
+app.get('/api/desembarques', async (req, res) => {
+  res.json({
+    success: true,
+    data: [],
+    message: 'Funcionalidade de desembarques em desenvolvimento'
+  });
+});
+
 // Rota de health check para verificar conexão com o banco
 app.get('/api/health', async (req, res) => {
   let client;
@@ -347,7 +404,8 @@ async function startServer() {
       console.log(`📊 Banco de dados: vports`);
       console.log(`🔍 Health check: http://localhost:${port}/api/health`);
       console.log(`📋 Info do banco: http://localhost:${port}/api/database-info`);
-      console.log(`⛵ Formulário: http://localhost:${port}/embarcacao.html`);
+      console.log(`⛵ Formulário: http://localhost:${port}/form/embarcacao`);
+      console.log(`👨‍💼 Admin: http://localhost:${port}/admin.html`);
     });
   } catch (error) {
     console.error('❌ Erro fatal ao iniciar servidor:', error);

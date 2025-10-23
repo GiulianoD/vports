@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Validação de Registros</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Administração — Validação de Registros</h1>
+      <p>Revise e valide os envios de <b>Embarcações</b> e <b>Desembarques</b>.</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="emb">Embarcações</button>
+      <button class="tab-btn" data-tab="des">Desembarques</button>
+    </div>
+
+    <div class="toolbar">
+      <select id="statusFilter">
+        <option value="">Todos os status</option>
+        <option value="pending">Pendentes</option>
+        <option value="approved">Aprovados</option>
+        <option value="rejected">Reprovados</option>
+      </select>
+      <input id="search" class="search" type="text" placeholder="Buscar por nome, RGP, cidade, embarcação..." />
+      <button id="exportJson" class="btn">Exportar JSON</button>
+      <button id="exportCsv" class="btn">Exportar CSV</button>
+      <button id="refresh" class="btn" title="Atualizar dados">🔄 Atualizar</button>
+    </div>
+
+    <div class="list">
+      <table>
+        <thead>
+          <tr id="head-row">
+            <!-- cabeçalho dinâmico -->
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <!-- linhas -->
+        </tbody>
+      </table>
+      <div id="loading" class="loading">Carregando dados...</div>
+      <div id="error" class="error hidden"></div>
+    </div>
+  </div>
+
+  <!-- Drawer de detalhes -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <h3 id="drawerTitle">Detalhes</h3>
+      <button id="closeDrawer" class="btn" style="background:#6c757d; color:white;">Fechar</button>
+    </div>
+    <div id="drawerBody"></div>
+    <div class="footer-actions">
+      <input id="reviewNote" type="text" placeholder="Motivo (opcional)" style="flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:6px;"/>
+      <button id="btnApprove" class="btn btn-approve">Aprovar</button>
+      <button id="btnReject" class="btn btn-reject">Reprovar</button>
+    </div>
+  </aside>
+
+  <!-- Overlay para quando o drawer estiver aberto -->
+  <div id="drawerOverlay" class="drawer-overlay"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const version = new Date().getTime();
+      const scripts = ["script.js"];
+      
+      scripts.forEach(src => {
+        const s = document.createElement("script");
+        s.src = `${src}?v=${version}`;
+        s.async = false;
+        document.body.appendChild(s);
+      });
+    });
+  </script>
+</body>
+</html>
