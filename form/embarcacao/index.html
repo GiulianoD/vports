@@ -120,9 +120,19 @@
         </div>
 
         <div class="form-group">
-          <label for="responsavel">Cadastrado em alguma associação? *</label>
-          <input type="text" id="responsavel" name="responsavel" required placeholder="Nome completo">
-        </div>
+        <label for="associado">Cadastrado em alguma associação? *</label>
+        <select id="associado" name="associado" required onchange="toggleAssociacao()">
+          <option value="">Selecione</option>
+          <option value="Não">Não</option>
+          <option value="Sim">Sim</option>
+        </select>
+      </div>
+
+      <div class="form-group hidden" id="associacaoContainer">
+        <label for="associacaoNome">Nome da Associação *</label>
+        <input type="text" id="associacaoNome" name="associacaoNome" placeholder="Ex: Colônia de Pescadores Z-1">
+      </div>
+
 
         <div class="form-row">
           <div class="form-group">

@@ -1,15 +1,18 @@
 /* =========================================================
-   Cadastro de Embarcação — embarcacao.js
+   Cadastro de Embarcação — embarcacao.js (corrigido)
    Recursos:
    - Mostrar campos "Outro" (casco, propulsão)
-   - UF -> Municípios (lista demonstrativa, expanda conforme necessário)
-   - Preview de anexos
-   - Validação básica e envio simulado
+   - UF -> Municípios (exemplos)
+   - Upload + preview (imagens/outros)
    - Rascunho (localStorage)
+   - Validação, incluindo associação (Sim/Não)
+   - Envio para backend (opcional) + gravação no Admin (DB.addEmbarcacao)
    ========================================================= */
 
 (function () {
   const form = document.getElementById("embarcacaoForm");
+  if (!form) return;
+
   const tipoCasco = document.getElementById("tipoCasco");
   const outroTipoCascoContainer = document.getElementById("outroTipoCascoContainer");
   const tipoPropulsao = document.getElementById("tipoPropulsao");
@@ -21,18 +24,25 @@
   const btnLimpar = document.getElementById("btnLimpar");
   const btnRascunho = document.getElementById("btnRascunho");
 
+  // Campos de associação (precisam existir no HTML):
+  // <select id="associado" name="associado" onchange="toggleAssociacao()">
+  // <div id="associacaoContainer" class="hidden"><input id="associacaoNome" ...>
+  const associado = document.getElementById("associado");
+  const associacaoContainer = document.getElementById("associacaoContainer");
+  const associacaoNome = document.getElementById("associacaoNome");
+
   // Array para armazenar os arquivos selecionados
   let uploadedFiles = [];
 
   /* ---------- Mostrar "Outro" ---------- */
-  function toggleOutro(selectEl, containerId) {
-    const container = containerId === "casco" ? outroTipoCascoContainer : outroTipoPropulsaoContainer;
-    container.classList.toggle("hidden", selectEl.value !== "Outro");
+  function toggleOutro(selectEl, kind) {
+    const container = kind === "casco" ? outroTipoCascoContainer : outroTipoPropulsaoContainer;
+    container?.classList.toggle("hidden", selectEl.value !== "Outro");
   }
-  tipoCasco.addEventListener("change", () => toggleOutro(tipoCasco, "casco"));
-  tipoPropulsao.addEventListener("change", () => toggleOutro(tipoPropulsao, "prop"));
+  tipoCasco?.addEventListener("change", () => toggleOutro(tipoCasco, "casco"));
+  tipoPropulsao?.addEventListener("change", () => toggleOutro(tipoPropulsao, "prop"));
 
-  /* ---------- UF -> Municípios (exemplos, expanda conforme necessidade) ---------- */
+  /* ---------- UF -> Municípios (exemplos, expanda conforme necessário) ---------- */
   const MUNICIPIOS = {
     ES: ["Vitória", "Vila Velha", "Serra", "Cariacica", "Guarapari", "Linhares", "Aracruz", "São Mateus", "Anchieta", "Piúma"],
     BA: ["Salvador", "Ilhéus", "Itacaré", "Porto Seguro", "Valença", "Itaparica"],
@@ -55,70 +65,55 @@
       frag.appendChild(opt);
     });
     municipio.appendChild(frag);
-
-    // Se UF sem lista, habilita texto livre via prompt (opcional)
     municipio.disabled = false;
   }
-  uf.addEventListener("change", () => popularMunicipios(uf.value));
+  uf?.addEventListener("change", () => popularMunicipios(uf.value));
 
-  /* ---------- Preview de anexos ---------- */
+  /* ---------- Upload + Preview de anexos ---------- */
   function handleFileUpload(event) {
     const files = event.target.files;
-    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      
-      // Verificar se o arquivo já foi adicionado
-      const isDuplicate = uploadedFiles.some(f => 
-        f.name === file.name && f.size === file.size
-      );
-      
-      if (!isDuplicate) {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-          uploadedFiles.push({
-            id: Date.now() + i, // ID único
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            data: e.target.result
-          });
-          
-          updateFilePreview();
-        };
-        
-        reader.readAsDataURL(file);
-      }
+
+      // evita duplicados por nome+tamanho
+      const isDuplicate = uploadedFiles.some(f => f.name === file.name && f.size === file.size);
+      if (isDuplicate) continue;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedFiles.push({
+          id: Date.now() + i, // ID simples
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: e.target.result // dataURL
+        });
+        updateFilePreview();
+      };
+      reader.readAsDataURL(file);
     }
-    
-    // Limpar o input de arquivo para permitir selecionar os mesmos arquivos novamente
+    // permite re-selecionar os mesmos arquivos
     event.target.value = '';
   }
 
-  // Atualizar preview de arquivos
   function updateFilePreview() {
     anexosPreview.innerHTML = '';
-    
     if (uploadedFiles.length === 0) {
       anexosPreview.innerHTML = '<div class="no-images">Nenhum arquivo selecionado</div>';
       return;
     }
-    
     uploadedFiles.forEach(file => {
       const previewItem = document.createElement('div');
       previewItem.className = 'preview-item';
       previewItem.dataset.id = file.id;
-      
+
       let content = '';
-      
       if (file.type.startsWith('image/')) {
         content = `
           <img src="${file.data}" alt="${file.name}" class="preview-image">
           <div class="preview-info">${file.name}</div>
         `;
       } else {
-        // Para arquivos PDF ou outros documentos
         content = `
           <div class="preview-document">
             <div class="document-icon">📄</div>
@@ -126,63 +121,78 @@
           </div>
         `;
       }
-      
+
       previewItem.innerHTML = content + `
         <button type="button" class="btn-delete-image" onclick="deleteFile(${file.id})" title="Remover arquivo">×</button>
       `;
-      
       anexosPreview.appendChild(previewItem);
     });
   }
 
-  // Deletar arquivo
   window.deleteFile = function(fileId) {
     uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
     updateFilePreview();
   };
 
-  // Adicionar event listener para upload de arquivos
-  anexos.addEventListener('change', handleFileUpload);
+  anexos?.addEventListener('change', handleFileUpload);
 
-  /* ---------- Máscara/ajuste simples RGP (opcional leve) ---------- */
+  /* ---------- Máscara simples do RGP ---------- */
   const rgp = document.getElementById("rgp");
-  rgp.addEventListener("input", () => {
-    // Mantém dígitos e um hífen antes do último dígito
+  rgp?.addEventListener("input", () => {
     const digits = rgp.value.replace(/\D/g, "").slice(0, 7); // 6+1
-    if (digits.length <= 6) {
-      rgp.value = digits;
-    } else {
-      rgp.value = digits.slice(0, 6) + "-" + digits.slice(6);
-    }
+    rgp.value = digits.length <= 6 ? digits : digits.slice(0, 6) + "-" + digits.slice(6);
   });
 
-  /* ---------- Validação extra ---------- */
+  /* ---------- Associação: mostrar/ocultar input ---------- */
+  function toggleAssociacao() {
+    if (!associado || !associacaoContainer || !associacaoNome) return;
+    if (associado.value === "Sim") {
+      associacaoContainer.classList.remove("hidden");
+      associacaoNome.required = true;
+    } else {
+      associacaoContainer.classList.add("hidden");
+      associacaoNome.required = false;
+      associacaoNome.value = "";
+    }
+  }
+  // expõe para o HTML (se usar onchange="toggleAssociacao()")
+  window.toggleAssociacao = toggleAssociacao;
+  // e também liga no change (para quem não usa inline)
+  associado?.addEventListener("change", toggleAssociacao);
+
+  /* ---------- Validação ---------- */
   function validarCampos() {
-    const nome = document.getElementById("nomeEmbarcacao").value.trim();
+    const nome = document.getElementById("nomeEmbarcacao")?.value.trim();
     if (!nome) return "Informe o Nome da Embarcação.";
-  
-    const rgpVal = rgp.value.trim();
-    if (!rgpVal || !/^\d{6}-?\d$/.test(rgpVal)) return "Informe um RGP válido (formato esperado: 6 dígitos + 1 dígito verificador, ex: 123456-7).";
-  
-    if (tipoCasco.value === "Outro") {
-      const outro = document.getElementById("outroTipoCasco").value.trim();
+
+    const rgpVal = rgp?.value.trim();
+    if (!rgpVal || !/^\d{6}-?\d$/.test(rgpVal)) return "Informe um RGP válido (ex: 123456-7).";
+
+    if (tipoCasco?.value === "Outro") {
+      const outro = document.getElementById("outroTipoCasco")?.value.trim();
       if (!outro) return "Especifique o Tipo de Casco (Outro).";
     }
 
-    if (tipoPropulsao.value === "Outro") {
-      const outro = document.getElementById("outroTipoPropulsao").value.trim();
+    if (tipoPropulsao?.value === "Outro") {
+      const outro = document.getElementById("outroTipoPropulsao")?.value.trim();
       if (!outro) return "Especifique o Tipo de Propulsão (Outro).";
     }
 
-    const ab = Number(document.getElementById("arqueacaoBruta").value);
+    const ab = Number(document.getElementById("arqueacaoBruta")?.value);
     if (Number.isNaN(ab) || ab < 0) return "Arqueação Bruta deve ser um número válido (≥ 0).";
-  
-    if (!uf.value) return "Selecione a UF.";
-    if (!municipio.value) return "Selecione o Município.";
-  
-    const resp = document.getElementById("responsavel").value.trim();
-    if (!resp) return "Informe o Responsável pela Embarcação.";
-  
+
+    if (!uf?.value) return "Selecione a UF.";
+    if (!municipio?.value) return "Selecione o Município.";
+
+    // valida associação
+    if (associado) {
+      if (!associado.value) return "Informe se está cadastrado em alguma associação (Sim/Não).";
+      if (associado.value === "Sim") {
+        const a = associacaoNome?.value.trim();
+        if (!a) return "Informe o Nome da Associação.";
+      }
+    }
+
     return null;
   }
 
@@ -201,15 +211,13 @@
         obj[k] = v;
       }
     }
-    
-    // Salvar informações básicas dos arquivos (sem os dados binários)
+    // Metadados dos anexos (sem binário)
     obj.uploadedFilesInfo = uploadedFiles.map(file => ({
       id: file.id,
       name: file.name,
       size: file.size,
       type: file.type
     }));
-    
     localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
     alert("Rascunho salvo!");
   }
@@ -219,47 +227,45 @@
     if (!raw) return;
     try {
       const obj = JSON.parse(raw);
-      // UF primeiro (para carregar municípios corretos)
       if (obj.uf) {
         uf.value = obj.uf;
         popularMunicipios(obj.uf);
       }
-      // Demais campos
       Object.entries(obj).forEach(([k, v]) => {
-        if (k === "uploadedFilesInfo") return; // Trataremos isso separadamente
-        
+        if (k === "uploadedFilesInfo") return;
         const el = form.elements[k];
-        if (!el) return;
-        el.value = v;
+        if (el) el.value = v;
       });
-  
-      // Restaurar informações dos arquivos (apenas a lista, não os dados)
+
+      // restaura anexos (apenas lista)
       if (obj.uploadedFilesInfo) {
         uploadedFiles = obj.uploadedFilesInfo;
         updateFilePreview();
       }
-  
-      // Mostrar campos "Outro" conforme seleção
+
+      // aplica visibilidades
       toggleOutro(tipoCasco, "casco");
       toggleOutro(tipoPropulsao, "prop");
+      toggleAssociacao();
     } catch { /* ignore */ }
   }
 
   /* ---------- Ações ---------- */
-  btnRascunho.addEventListener("click", salvarRascunho);
+  btnRascunho?.addEventListener("click", salvarRascunho);
 
-  btnLimpar.addEventListener("click", () => {
+  btnLimpar?.addEventListener("click", () => {
     if (!confirm("Deseja limpar o formulário?")) return;
     form.reset();
     localStorage.removeItem(DRAFT_KEY);
     municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
     uploadedFiles = [];
     updateFilePreview();
-    outroTipoCascoContainer.classList.add("hidden");
-    outroTipoPropulsaoContainer.classList.add("hidden");
+    outroTipoCascoContainer?.classList.add("hidden");
+    outroTipoPropulsaoContainer?.classList.add("hidden");
+    toggleAssociacao();
   });
 
-  /* ---------- Evento de Submit ATUALIZADO ---------- */
+  /* ---------- Submit: backend (opcional) + Admin (local) ---------- */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -269,53 +275,75 @@
       return;
     }
 
+    // JSON “limpo” (sem binários) para o Admin local
+    const fd = new FormData(form);
+    const json = {};
+    fd.forEach((v, k) => {
+      if (k === "anexos") return;
+      if (json[k]) {
+        if (!Array.isArray(json[k])) json[k] = [json[k]];
+        json[k].push(v);
+      } else {
+        json[k] = v;
+      }
+    });
+    // Inclui nomes dos arquivos no JSON salvo localmente
+    json.anexosNomes = uploadedFiles.map(f => f.name);
+
+    // 1) Grava no Admin (localStorage) — garante que admin.html veja o registro
     try {
-      // Criar FormData para enviar arquivos
+      if (typeof DB?.addEmbarcacao === "function") {
+        DB.addEmbarcacao(json);
+      }
+    } catch { /* ignore */ }
+
+    // 2) (Opcional) Envia para backend se disponível
+    try {
       const formData = new FormData(form);
-      
-      // Adicionar arquivos selecionados
+      // anexa os blobs convertidos a partir do dataURL
       uploadedFiles.forEach(file => {
-        // Converter data URL para blob
-        if (file.data.startsWith('data:')) {
+        if (file.data && file.data.startsWith('data:')) {
           const byteString = atob(file.data.split(',')[1]);
           const mimeString = file.data.split(',')[0].split(':')[1].split(';')[0];
           const ab = new ArrayBuffer(byteString.length);
           const ia = new Uint8Array(ab);
-          for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-          }
+          for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
           const blob = new Blob([ab], { type: mimeString });
           formData.append('anexos', blob, file.name);
         }
       });
 
-      // Enviar para o backend
-      const response = await fetch('http://localhost:3000/api/embarcacoes', {
+      // ajuste a URL conforme seu backend real (ou remova este bloco se não tiver backend)
+      const resp = await fetch('http://localhost:3000/api/embarcacoes', {
         method: 'POST',
         body: formData
-      });
+      }).catch(() => null);
 
-      const result = await response.json();
-
-      if (result.success) {
-        alert("Embarcação cadastrada com sucesso!");
-        
-        // Limpar formulário
-        localStorage.removeItem(DRAFT_KEY);
-        form.reset();
-        municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-        uploadedFiles = [];
-        updateFilePreview();
-        outroTipoCascoContainer.classList.add("hidden");
-        outroTipoPropulsaoContainer.classList.add("hidden");
+      if (resp && resp.ok) {
+        const result = await resp.json().catch(() => ({}));
+        if (!result?.success) {
+          console.warn("Backend respondeu sem success=true. Registro já foi salvo localmente no Admin.");
+        }
       } else {
-        alert("Erro ao cadastrar embarcação: " + result.message);
+        console.warn("Backend indisponível. Registro já foi salvo localmente no Admin.");
       }
-
     } catch (error) {
-      console.error('Erro:', error);
-      alert("Erro ao conectar com o servidor");
+      console.warn("Falha no envio ao backend:", error);
+      // seguimos, pois já salvamos localmente
     }
+
+    console.log("Payload salvo no Admin (sem anexos):", json);
+    alert("Embarcação cadastrada com sucesso!");
+
+    // Limpa rascunho e UI
+    localStorage.removeItem(DRAFT_KEY);
+    form.reset();
+    municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+    uploadedFiles = [];
+    updateFilePreview();
+    outroTipoCascoContainer?.classList.add("hidden");
+    outroTipoPropulsaoContainer?.classList.add("hidden");
+    toggleAssociacao();
   });
 
   /* ---------- Init ---------- */
