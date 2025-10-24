@@ -114,7 +114,7 @@ function preencherEmbarcacoesFallback(mensagemErro) {
 function initForm() {
     // Preencher cidades do Espírito Santo
     const cidadesES = [
-        "Iparica", "Itapoã", "Praia do Ribeiro", "Praia da costa", "Prainha", 
+        "Itaparica", "Itapoã", "Praia do Ribeiro", "Praia da costa", "Prainha", 
         "Praia do Suá/Canto", "Enseada do Suá", "Ilha das Caieiras", "Santo Antônio", "Grande Vitória"
     ];
     
