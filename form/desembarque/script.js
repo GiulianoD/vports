@@ -307,43 +307,58 @@ function clearForm() {
 }
 
 // Processar envio do formulário
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
     
     // Validar formulário
     if (validarFormulario()) {
-        // Aqui você pode enviar os dados para um servidor
-        // Por enquanto, apenas mostra os dados no console
-        const formData = new FormData(event.target);
-        const data = {};
-        
-        for (let [key, value] of formData.entries()) {
-            if (key === 'especie[]' || key === 'quantidade[]') {
-                if (!data.especies) data.especies = [];
-                const index = key === 'especie[]' ? 0 : 1;
+        try {
+            // Mostrar loading
+            const submitBtn = event.target.querySelector('.btn-submit');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Enviando...';
+            submitBtn.disabled = true;
+
+            // Preparar dados do formulário
+            const formData = new FormData(event.target);
+            
+            // Adicionar imagens ao FormData
+            uploadedImages.forEach((image, index) => {
+                // Converter data URL para blob
+                fetch(image.data)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        formData.append('imagens', blob, image.name);
+                    });
+            });
+
+            // Enviar para o servidor
+            const response = await fetch('/api/desembarques', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Desembarque registrado com sucesso!');
+                console.log('Dados salvos:', result.data);
                 
-                if (!data.especies[data.especies.length - 1]) {
-                    data.especies.push(['', '']);
-                }
-                
-                data.especies[data.especies.length - 1][index] = value;
+                // Limpar formulário após envio
+                clearForm();
             } else {
-                data[key] = value;
+                throw new Error(result.message || 'Erro ao salvar desembarque');
             }
+
+        } catch (error) {
+            console.error('❌ Erro ao enviar formulário:', error);
+            alert('Erro ao enviar formulário: ' + error.message);
+        } finally {
+            // Restaurar botão
+            const submitBtn = event.target.querySelector('.btn-submit');
+            submitBtn.textContent = 'Enviar Registro';
+            submitBtn.disabled = false;
         }
-        
-        // Adicionar informações das imagens
-        data.imagens = uploadedImages.map(img => ({
-            name: img.name,
-            size: img.size
-            // Em um ambiente real, você enviaria o arquivo real, não o data URL
-        }));
-        
-        console.log('Dados do formulário:', data);
-        alert('Formulário enviado com sucesso! Verifique o console para ver os dados.');
-        
-        // Limpar formulário após envio
-        clearForm();
     }
 }
 

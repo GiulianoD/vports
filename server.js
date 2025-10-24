@@ -87,7 +87,7 @@ async function initializeDatabase() {
   }
 }
 
-// Criar tabela no PostgreSQL COM OS CAMPOS DE STATUS
+// Criar tabela para embarcações
 async function createTableEmbarcacoes() {
   try {
     const query = `
@@ -117,6 +117,40 @@ async function createTableEmbarcacoes() {
     console.log('✅ Tabela embarcacoes criada/verificada com sucesso!');
   } catch (error) {
     console.error('❌ Erro ao criar tabela:', error);
+    throw error;
+  }
+}
+
+// Criar tabela para desembarques pesqueiros
+async function createTableDesembarques() {
+  try {
+    const query = `
+      CREATE TABLE IF NOT EXISTS desembarques (
+        id SERIAL PRIMARY KEY,
+        embarcacao_id INTEGER REFERENCES embarcacoes(id),
+        data_desembarque DATE NOT NULL,
+        local_desembarque VARCHAR(255) NOT NULL,
+        destinacao VARCHAR(100) NOT NULL,
+        outro_destinacao VARCHAR(255),
+        arte_pesca VARCHAR(100) NOT NULL,
+        outro_arte_pesca VARCHAR(255),
+        data_saida TIMESTAMP NOT NULL,
+        data_retorno TIMESTAMP NOT NULL,
+        data_inicio_pesca TIMESTAMP NOT NULL,
+        data_fim_pesca TIMESTAMP NOT NULL,
+        esforco VARCHAR(100),
+        local_pesca VARCHAR(100),
+        coordenadas VARCHAR(255),
+        observacoes TEXT,
+        imagens JSONB,
+        especies JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await pool.query(query);
+    console.log('✅ Tabela desembarques criada/verificada com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao criar tabela desembarques:', error);
     throw error;
   }
 }
@@ -359,13 +393,143 @@ app.get('/api/embarcacoes-ativas', async (req, res) => {
   }
 });
 
-// Rota placeholder para desembarques
+// Rota para salvar os dados do formulário de desembarque
+app.post('/api/desembarques', upload.array('imagens', 10), async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+    
+    const {
+      embarcacao,
+      dataDesembarque,
+      localDesembarque,
+      destinacao,
+      outroDestinacao,
+      artePesca,
+      outroArtePesca,
+      dataSaida,
+      dataRetorno,
+      dataInicioPesca,
+      dataFimPesca,
+      esforco,
+      localPesca,
+      coordenadas,
+      observacoes,
+      especie,
+      quantidade
+    } = req.body;
+
+    // Processar espécies
+    const especies = [];
+    if (especie && quantidade) {
+      const especiesArray = Array.isArray(especie) ? especie : [especie];
+      const quantidadesArray = Array.isArray(quantidade) ? quantidade : [quantidade];
+      
+      for (let i = 0; i < especiesArray.length; i++) {
+        if (especiesArray[i] && quantidadesArray[i]) {
+          especies.push({
+            nome: especiesArray[i],
+            quantidade: parseFloat(quantidadesArray[i])
+          });
+        }
+      }
+    }
+
+    // Processar imagens
+    let imagensData = [];
+    if (req.files && req.files.length > 0) {
+      imagensData = req.files.map(file => ({
+        nome: file.originalname,
+        caminho: file.path,
+        tamanho: file.size,
+        tipo: file.mimetype
+      }));
+    }
+
+    // Determinar valores finais para campos "outro"
+    const destinacaoFinal = destinacao === 'Outro' ? outroDestinacao : destinacao;
+    const artePescaFinal = artePesca === 'Outro' ? outroArtePesca : artePesca;
+
+    const query = `
+      INSERT INTO desembarques (
+        embarcacao_id, data_desembarque, local_desembarque, 
+        destinacao, outro_destinacao, arte_pesca, outro_arte_pesca,
+        data_saida, data_retorno, data_inicio_pesca, data_fim_pesca,
+        esforco, local_pesca, coordenadas, observacoes, imagens, especies
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      RETURNING *
+    `;
+
+    const values = [
+      embarcacao || null,
+      dataDesembarque,
+      localDesembarque,
+      destinacaoFinal,
+      destinacao === 'Outro' ? outroDestinacao : null,
+      artePescaFinal,
+      artePesca === 'Outro' ? outroArtePesca : null,
+      dataSaida,
+      dataRetorno,
+      dataInicioPesca,
+      dataFimPesca,
+      esforco || null,
+      localPesca || null,
+      coordenadas || null,
+      observacoes || null,
+      imagensData.length > 0 ? JSON.stringify(imagensData) : null,
+      JSON.stringify(especies)
+    ];
+
+    const result = await client.query(query, values);
+    
+    res.json({
+      success: true,
+      message: 'Desembarque registrado com sucesso!',
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao salvar desembarque:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para listar desembarques
 app.get('/api/desembarques', async (req, res) => {
-  res.json({
-    success: true,
-    data: [],
-    message: 'Funcionalidade de desembarques em desenvolvimento'
-  });
+  let client;
+  try {
+    client = await pool.connect();
+    const query = `
+      SELECT d.*, e.nome_embarcacao, e.rgp 
+      FROM desembarques d 
+      LEFT JOIN embarcacoes e ON d.embarcacao_id = e.id 
+      ORDER BY d.created_at DESC
+    `;
+    const result = await client.query(query);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar desembarques:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
 });
 
 // Rota de health check para verificar conexão com o banco
@@ -437,6 +601,7 @@ async function startServer() {
     console.log('🚀 Iniciando servidor...');
     await initializeDatabase();
     await createTableEmbarcacoes();
+    await createTableDesembarques();
     
     app.listen(port, () => {
       console.log(`✅ Servidor rodando na porta ${port}`);
