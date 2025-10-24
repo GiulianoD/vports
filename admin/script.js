@@ -241,6 +241,8 @@
         v = processedData.especies_formatted;
       } else if (k === 'imagens' && processedData.imagens_formatted) {
         v = processedData.imagens_formatted;
+      } else if (k === 'anexos' && processedData.anexos_formatted) {
+        v = processedData.anexos_formatted;
       } else if (v === null || v === undefined) {
         v = '';
       } else if (Array.isArray(v)) {
@@ -252,10 +254,19 @@
       kvPairs.push(`<b>${formatFieldName(k)}</b><div>${v.toString()}</div>`);
     });
 
-    // Gerar seção de imagens com miniaturas (apenas para desembarques)
-    let imagesSection = '';
-    if (coll === 'desembarque' && processedData.imagens && Array.isArray(processedData.imagens) && processedData.imagens.length > 0) {
-      imagesSection = `
+    // Gerar seção de anexos/imagens
+    let attachmentsSection = '';
+    
+    if (coll === 'embarcacao' && processedData.anexos && Array.isArray(processedData.anexos) && processedData.anexos.length > 0) {
+      attachmentsSection = `
+        <hr style="margin:12px 0;">
+        <h4>Arquivos Anexados</h4>
+        <div class="attachments-gallery">
+          ${renderAttachmentsGallery(processedData.anexos)}
+        </div>
+      `;
+    } else if (coll === 'desembarque' && processedData.imagens && Array.isArray(processedData.imagens) && processedData.imagens.length > 0) {
+      attachmentsSection = `
         <hr style="margin:12px 0;">
         <h4>Imagens Anexadas</h4>
         <div class="images-gallery">
@@ -285,7 +296,7 @@
           </div>
         ` : ''}
         
-        ${imagesSection}
+        ${attachmentsSection}
         
         <hr style="margin:12px 0;">
         <details>
@@ -301,6 +312,127 @@
 
     // Prevenir scroll do body quando drawer estiver aberto
     document.body.style.overflow = 'hidden';
+  }
+
+  // Função para renderizar galeria de anexos para embarcações
+  function renderAttachmentsGallery(anexos) {
+    if (!anexos || !Array.isArray(anexos) || anexos.length === 0) {
+      return '<p>Nenhum arquivo disponível</p>';
+    }
+
+    // Separar imagens de outros arquivos
+    const images = anexos.filter(anexo => anexo.tipo && anexo.tipo.startsWith('image/'));
+    const otherFiles = anexos.filter(anexo => !anexo.tipo || !anexo.tipo.startsWith('image/'));
+
+    let galleryHTML = '';
+
+    // Mostrar imagens como miniaturas
+    if (images.length > 0) {
+      galleryHTML += `
+        <div style="margin-bottom: 20px;">
+          <h5 style="margin-bottom: 10px; color: #2c3e50;">Imagens (${images.length})</h5>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;">
+            ${images.map(img => {
+              const fileName = img.nome || 'Arquivo sem nome';
+              const filePath = img.caminho || '';
+              const fileNameOnly = filePath.split('/').pop() || fileName;
+              const imageUrl = `/${fileNameOnly}`;
+              
+              return `
+                <div style="text-align: center;">
+                  <a href="${imageUrl}" target="_blank" title="Abrir imagem em tamanho real">
+                    <img 
+                      src="${imageUrl}" 
+                      alt="${fileName}"
+                      style="
+                        width: 100px; 
+                        height: 100px; 
+                        object-fit: cover; 
+                        border-radius: 6px; 
+                        border: 2px solid #e0e0e0;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                      "
+                      onerror="this.style.display='none'"
+                      onmouseover="this.style.borderColor='#3498db'"
+                      onmouseout="this.style.borderColor='#e0e0e0'"
+                    >
+                  </a>
+                  <div style="margin-top: 5px; font-size: 11px; word-break: break-all;">
+                    <a href="${imageUrl}" target="_blank" title="Abrir imagem em nova aba" style="color: #3498db; text-decoration: none;">
+                      ${fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}
+                    </a>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Mostrar outros arquivos como lista
+    if (otherFiles.length > 0) {
+      galleryHTML += `
+        <div>
+          <h5 style="margin-bottom: 10px; color: #2c3e50;">Outros Arquivos (${otherFiles.length})</h5>
+          <ul style="list-style: none; padding: 0;">
+            ${otherFiles.map(file => {
+              const fileName = file.nome || 'Arquivo sem nome';
+              const filePath = file.caminho || '';
+              const fileNameOnly = filePath.split('/').pop() || fileName;
+              const fileUrl = `/${fileNameOnly}`;
+              const fileIcon = getFileIcon(file.tipo);
+              
+              return `
+                <li style="margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                  <a href="${fileUrl}" target="_blank" 
+                    style="color: #3498db; text-decoration: none; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.color='#2980b9'" 
+                    onmouseout="this.style.color='#3498db'">
+                    <span style="font-size: 16px;">${fileIcon}</span>
+                    <span>${fileName}</span>
+                    <small style="color: #6c757d; margin-left: auto;">${formatFileSize(file.tamanho)}</small>
+                  </a>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    galleryHTML += `
+      <div style="margin-top: 15px; font-size: 12px; color: #6c757d; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+        <strong>Total: ${anexos.length}</strong> arquivo(s) anexado(s). Clique nas miniaturas ou nomes para abrir em nova aba.
+      </div>
+    `;
+
+    return galleryHTML;
+  }
+
+  // Função auxiliar para obter ícone baseado no tipo de arquivo
+  function getFileIcon(mimeType) {
+    if (!mimeType) return '📄';
+    
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📕';
+    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+    if (mimeType.includes('zip') || mimeType.includes('compressed')) return '📦';
+    
+    return '📄';
+  }
+
+  // Função auxiliar para formatar tamanho de arquivo
+  function formatFileSize(bytes) {
+    if (!bytes) return '';
+    
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return '0 Bytes';
+    
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   }
 
   // Função para renderizar galeria de imagens com miniaturas
@@ -404,6 +536,43 @@
           processed[mainField] = `Outro (${processed[outroField]})`;
         }
       });
+
+      // Processar anexos se existirem
+      if (processed.anexos && typeof processed.anexos === 'string') {
+        try {
+          processed.anexos = JSON.parse(processed.anexos);
+        } catch (e) {
+          console.warn('Erro ao parsear anexos:', e);
+        }
+      }
+
+      // Formatar anexos para exibição com links
+      if (processed.anexos && Array.isArray(processed.anexos)) {
+        processed.anexos_formatted = processed.anexos
+          .map(anexo => {
+            const fileName = anexo.nome || 'Arquivo sem nome';
+            const filePath = anexo.caminho || '';
+            
+            // Se tiver caminho, criar link para o arquivo
+            if (filePath) {
+              // Extrair apenas o nome do arquivo do caminho completo
+              const fileNameOnly = filePath.split('/').pop() || fileName;
+              const fileUrl = `/${fileNameOnly}`;
+              
+              // Verificar se é imagem para mostrar ícone diferente
+              const isImage = anexo.tipo && anexo.tipo.startsWith('image/');
+              const icon = isImage ? '🖼️' : '📄';
+              
+              return `${icon} <a href="${fileUrl}" target="_blank" title="Abrir arquivo em nova aba">${fileName}</a>`;
+            } else {
+              return fileName;
+            }
+          })
+          .join('<br>');
+      } else {
+        processed.anexos_formatted = 'Nenhum arquivo anexado';
+      }
+
     } else {
       // Mapeamento para desembarques
       const fieldMappings = {
@@ -489,6 +658,8 @@
       'status': 'Status',
       'review_note': 'Nota de Revisão',
       'reviewed_at': 'Data de Revisão',
+      'anexos': 'Arquivos Anexados',
+      'anexos_formatted': 'Arquivos Anexados',
       
       // Desembarques
       'data_desembarque': 'Data do Desembarque',
