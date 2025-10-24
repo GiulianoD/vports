@@ -95,10 +95,14 @@
               (r.responsavel || "").toLowerCase().includes(q)
             );
           } else {
+            // Busca para desembarques
+            const embarcacaoNome = r.nome_embarcacao || (r.embarcacoes ? r.embarcacoes.nome_embarcacao : '') || '';
             return (
-              (r.embarcacao || "").toLowerCase().includes(q) ||
+              embarcacaoNome.toLowerCase().includes(q) ||
               (r.local_desembarque || "").toLowerCase().includes(q) ||
               (r.data_desembarque || "").toLowerCase().includes(q) ||
+              (r.destinacao || "").toLowerCase().includes(q) ||
+              (r.arte_pesca || "").toLowerCase().includes(q) ||
               (r.observacoes || "").toLowerCase().includes(q)
             );
           }
@@ -153,16 +157,20 @@
             </tr>
           `;
         } else {
+          // Para desembarques
+          const embarcacaoNome = r.nome_embarcacao || (r.embarcacoes ? r.embarcacoes.nome_embarcacao : '') || 'N/A';
+          const embarcacaoRgp = r.rgp || (r.embarcacoes ? r.embarcacoes.rgp : '') || 'N/A';
+          
           return `
             <tr>
               <td>${r.id}</td>
               <td>${statusBadge(r.status || 'pending')}</td>
               <td>${new Date(r.created_at).toLocaleString()}</td>
-              <td>${r.embarcacao || ""}</td>
-              <td>${r.data_desembarque || ""}</td>
+              <td>${embarcacaoNome} (${embarcacaoRgp})</td>
+              <td>${formatDate(r.data_desembarque)}</td>
               <td>${r.local_desembarque || ""}</td>
               <td class="row-actions">
-                <button class="btn btn-view" data-id="${r.id}">Ver</button>
+                <button class="btn btn-view" data-id="${r.id}" data-type="desembarque">Ver</button>
               </td>
             </tr>
           `;
@@ -174,12 +182,20 @@
     rowsEl.querySelectorAll(".btn-view").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-id");
+        const type = btn.getAttribute("data-type") || 'embarcacao';
+        
         try {
-          const response = await fetch(`${API_BASE}/embarcacoes/${id}`);
+          let response;
+          if (type === 'desembarque') {
+            response = await fetch(`${API_BASE}/desembarques/${id}`);
+          } else {
+            response = await fetch(`${API_BASE}/embarcacoes/${id}`);
+          }
+          
           const result = await response.json();
           
           if (result.success) {
-            openDrawer(result.data, 'embarcacao');
+            openDrawer(result.data, type);
           } else {
             alert('Erro ao carregar detalhes: ' + result.message);
           }
@@ -193,24 +209,37 @@
   function openDrawer(rec, coll) {
     selectedRecord = { rec, coll };
 
-    drawerTitle.textContent =
-      coll === "embarcacao"
-        ? `Embarcação — ${rec.nome_embarcacao || rec.id}`
-        : `Desembarque — ${rec.embarcacao || rec.id}`;
+    if (coll === "embarcacao") {
+      drawerTitle.textContent = `Embarcação — ${rec.nome_embarcacao || rec.id}`;
+    } else {
+      const embarcacaoNome = rec.nome_embarcacao || (rec.embarcacoes ? rec.embarcacoes.nome_embarcacao : '') || 'N/A';
+      drawerTitle.textContent = `Desembarque — ${embarcacaoNome} (${formatDate(rec.data_desembarque)})`;
+    }
 
     // Processar os dados para agrupar campos "outro"
-    const processedData = processRecordData(rec);
+    const processedData = processRecordData(rec, coll);
 
     // corpo — chave/valor legível
     const kvPairs = [];
     Object.keys(processedData).forEach((k) => {
-      // Pular campos que começam com "outro_" pois já foram processados
-      if (k.startsWith('outro_')) return;
+      // Pular campos que começam com "outro_" e campos formatados internos
+      if (k.startsWith('outro_') || k.endsWith('_formatted')) return;
       
       let v = processedData[k];
-      if (v === null || v === undefined) v = '';
-      if (Array.isArray(v)) v = v.join(", ");
-      if (typeof v === 'object') v = JSON.stringify(v);
+      
+      // Usar campos formatados quando disponíveis
+      if (k === 'especies' && processedData.especies_formatted) {
+        v = processedData.especies_formatted;
+      } else if (k === 'imagens' && processedData.imagens_formatted) {
+        v = processedData.imagens_formatted;
+      } else if (v === null || v === undefined) {
+        v = '';
+      } else if (Array.isArray(v)) {
+        v = v.join(", ");
+      } else if (typeof v === 'object' && !(v instanceof Date)) {
+        v = JSON.stringify(v, null, 2);
+      }
+      
       kvPairs.push(`<b>${formatFieldName(k)}</b><div>${v.toString()}</div>`);
     });
 
@@ -224,8 +253,17 @@
           ${rec.review_note ? `<b>Observação</b><div>${rec.review_note}</div>` : ""}
         </div>
         <hr style="margin:12px 0;">
-        <h4>Dados da Embarcação</h4>
+        <h4>${coll === 'embarcacao' ? 'Dados da Embarcação' : 'Dados do Desembarque'}</h4>
         <div class="kv">${kvPairs.join("")}</div>
+        
+        ${coll === 'desembarque' ? `
+          <hr style="margin:12px 0;">
+          <h4>Detalhes da Captura</h4>
+          <div class="species-details">
+            ${renderSpeciesDetails(processedData.especies)}
+          </div>
+        ` : ''}
+        
         <hr style="margin:12px 0;">
         <details>
           <summary>JSON bruto</summary>
@@ -242,31 +280,114 @@
     document.body.style.overflow = 'hidden';
   }
 
-  function processRecordData(rec) {
+  // Função para renderizar detalhes das espécies em formato de tabela
+  function renderSpeciesDetails(especies) {
+    if (!especies || !Array.isArray(especies) || especies.length === 0) {
+      return '<p>Nenhuma espécie registrada</p>';
+    }
+
+    const total = especies.reduce((sum, esp) => sum + (parseFloat(esp.quantidade) || 0), 0);
+    
+    return `
+      <div style="margin-bottom: 15px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f8f9fa;">
+              <th style="padding: 8px; border: 1px solid #dee2e6; text-align: left;">Espécie</th>
+              <th style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">Quantidade (kg)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${especies.map(esp => `
+              <tr>
+                <td style="padding: 8px; border: 1px solid #dee2e6;">${esp.nome || 'N/A'}</td>
+                <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">${parseFloat(esp.quantidade || 0).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background-color: #e9ecef; font-weight: bold;">
+              <td style="padding: 8px; border: 1px solid #dee2e6;">TOTAL</td>
+              <td style="padding: 8px; border: 1px solid #dee2e6; text-align: right;">${total.toFixed(2)} kg</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+  }
+  function processRecordData(rec, coll) {
     const processed = {...rec};
 
-    // Mapeamento de campos principais para seus respectivos campos "outro"
-    const fieldMappings = {
-      'tipo_casco': 'outro_tipo_casco',
-      'tipo_propulsao': 'outro_tipo_propulsao'
-      // Adicione outros mapeamentos conforme necessário
-    };
+    if (coll === "embarcacao") {
+      // Mapeamento para embarcações
+      const fieldMappings = {
+        'tipo_casco': 'outro_tipo_casco',
+        'tipo_propulsao': 'outro_tipo_propulsao'
+      };
 
-    // Processar cada mapeamento
-    Object.keys(fieldMappings).forEach(mainField => {
-      const outroField = fieldMappings[mainField];
+      Object.keys(fieldMappings).forEach(mainField => {
+        const outroField = fieldMappings[mainField];
+        if (processed[mainField] === 'Outro' && processed[outroField]) {
+          processed[mainField] = `Outro (${processed[outroField]})`;
+        }
+      });
+    } else {
+      // Mapeamento para desembarques
+      const fieldMappings = {
+        'destinacao': 'outro_destinacao',
+        'arte_pesca': 'outro_arte_pesca'
+      };
 
-      // Se o campo principal for "Outro" e o campo "outro" tiver valor
-      if (processed[mainField] === 'Outro' && processed[outroField]) {
-        processed[mainField] = `Outro (${processed[outroField]})`;
+      Object.keys(fieldMappings).forEach(mainField => {
+        const outroField = fieldMappings[mainField];
+        if (processed[mainField] === 'Outro' && processed[outroField]) {
+          processed[mainField] = `Outro (${processed[outroField]})`;
+        }
+      });
+
+      // Processar espécies se existirem
+      if (processed.especies && typeof processed.especies === 'string') {
+        try {
+          processed.especies = JSON.parse(processed.especies);
+        } catch (e) {
+          console.warn('Erro ao parsear espécies:', e);
+        }
       }
-    });
+
+      // Processar imagens se existirem
+      if (processed.imagens && typeof processed.imagens === 'string') {
+        try {
+          processed.imagens = JSON.parse(processed.imagens);
+        } catch (e) {
+          console.warn('Erro ao parsear imagens:', e);
+        }
+      }
+
+      // Formatar espécies para exibição
+      if (processed.especies && Array.isArray(processed.especies)) {
+        processed.especies_formatted = processed.especies
+          .map(esp => `${esp.nome || 'N/A'}: ${esp.quantidade || 0}kg`)
+          .join('; ');
+      } else {
+        processed.especies_formatted = 'Nenhuma espécie registrada';
+      }
+
+      // Formatar imagens para exibição
+      if (processed.imagens && Array.isArray(processed.imagens)) {
+        processed.imagens_formatted = processed.imagens
+          .map(img => img.nome || 'Arquivo sem nome')
+          .join(', ');
+      } else {
+        processed.imagens_formatted = 'Nenhuma imagem anexada';
+      }
+    }
 
     return processed;
   }
 
   function formatFieldName(fieldName) {
     const names = {
+      // Embarcações
       'nome_embarcacao': 'Nome da Embarcação',
       'rgp': 'RGP',
       'tipo_casco': 'Tipo de Casco',
@@ -281,9 +402,45 @@
       'created_at': 'Data de Criação',
       'status': 'Status',
       'review_note': 'Nota de Revisão',
-      'reviewed_at': 'Data de Revisão'
+      'reviewed_at': 'Data de Revisão',
+      
+      // Desembarques
+      'data_desembarque': 'Data do Desembarque',
+      'local_desembarque': 'Local do Desembarque',
+      'destinacao': 'Destinação',
+      'arte_pesca': 'Arte de Pesca',
+      'data_saida': 'Data de Saída',
+      'data_retorno': 'Data de Retorno',
+      'data_inicio_pesca': 'Data de Início da Pesca',
+      'data_fim_pesca': 'Data de Fim da Pesca',
+      'esforco': 'Esforço de Pesca',
+      'local_pesca': 'Local de Pesca (FAO)',
+      'coordenadas': 'Coordenadas',
+      'especies': 'Espécies Capturadas (Resumo)',
+      'imagens': 'Imagens Anexadas',
+      'embarcacao_id': 'ID da Embarcação',
+      'especies_formatted': 'Espécies Capturadas',
+      'imagens_formatted': 'Imagens Anexadas'
     };
     return names[fieldName] || fieldName;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleString('pt-BR');
+    } catch (e) {
+      return dateString;
+    }
   }
 
   function close() {
@@ -303,7 +460,14 @@
     if (!selectedRecord) return;
 
     try {
-      const response = await fetch(`${API_BASE}/embarcacoes/${selectedRecord.rec.id}/status`, {
+      let endpoint;
+      if (selectedRecord.coll === 'embarcacao') {
+        endpoint = `${API_BASE}/embarcacoes/${selectedRecord.rec.id}/status`;
+      } else {
+        endpoint = `${API_BASE}/desembarques/${selectedRecord.rec.id}/status`;
+      }
+
+      const response = await fetch(endpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -317,7 +481,8 @@
       const result = await response.json();
 
       if (result.success) {
-        alert(`Embarcação ${status === 'approved' ? 'aprovada' : 'reprovada'} com sucesso!`);
+        const tipo = selectedRecord.coll === 'embarcacao' ? 'Embarcação' : 'Desembarque';
+        alert(`${tipo} ${status === 'approved' ? 'aprovado' : 'reprovado'} com sucesso!`);
         render();
         close();
       } else {
@@ -343,18 +508,20 @@
   search.addEventListener("input", render);
   refreshBtn.addEventListener("click", render);
 
-  // Exportações (simplificadas - apenas embarcações por enquanto)
+  // Exportações
   exportJson.addEventListener("click", async () => {
     try {
-      const response = await fetch(`${API_BASE}/embarcacoes`);
+      const endpoint = currentTab === "emb" ? "embarcacoes" : "desembarques";
+      const response = await fetch(`${API_BASE}/${endpoint}`);
       const result = await response.json();
       
       if (result.success) {
+        const tipo = currentTab === "emb" ? "embarcacoes" : "desembarques";
         const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement("a"), {
           href: url,
-          download: `embarcacoes-export-${Date.now()}.json`,
+          download: `${tipo}-export-${Date.now()}.json`,
         });
         a.click();
         URL.revokeObjectURL(url);
@@ -366,11 +533,11 @@
 
   exportCsv.addEventListener("click", async () => {
     try {
-      const response = await fetch(`${API_BASE}/embarcacoes`);
+      const endpoint = currentTab === "emb" ? "embarcacoes" : "desembarques";
+      const response = await fetch(`${API_BASE}/${endpoint}`);
       const result = await response.json();
       
       if (result.success) {
-        // Converter para CSV simples
         const data = result.data;
         if (data.length === 0) {
           alert('Nenhum dado para exportar');
@@ -391,11 +558,12 @@
         });
 
         const csvString = csvRows.join('\n');
+        const tipo = currentTab === "emb" ? "embarcacoes" : "desembarques";
         const blob = new Blob([csvString], { type: "text/csv;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement("a"), {
           href: url,
-          download: `embarcacoes-export-${Date.now()}.csv`,
+          download: `${tipo}-export-${Date.now()}.csv`,
         });
         a.click();
         URL.revokeObjectURL(url);

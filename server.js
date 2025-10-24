@@ -121,7 +121,7 @@ async function createTableEmbarcacoes() {
   }
 }
 
-// Criar tabela para desembarques pesqueiros
+// Atualize a função createTableDesembarques para incluir campos de status
 async function createTableDesembarques() {
   try {
     const query = `
@@ -144,6 +144,9 @@ async function createTableDesembarques() {
         observacoes TEXT,
         imagens JSONB,
         especies JSONB NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        review_note TEXT,
+        reviewed_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
@@ -515,15 +518,133 @@ app.get('/api/desembarques', async (req, res) => {
     `;
     const result = await client.query(query);
     
+    // Processar dados JSON para cada desembarque
+    const desembarques = result.rows.map(row => {
+      // Parsear espécies se existirem
+      if (row.especies && typeof row.especies === 'string') {
+        try {
+          row.especies = JSON.parse(row.especies);
+        } catch (e) {
+          console.warn('Erro ao parsear espécies:', e);
+        }
+      }
+      return row;
+    });
+
     res.json({
       success: true,
-      data: result.rows
+      data: desembarques
     });
   } catch (error) {
     console.error('❌ Erro ao buscar desembarques:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para buscar desembarque por ID
+app.get('/api/desembarques/:id', async (req, res) => {
+  let client;
+  try {
+    const { id } = req.params;
+    client = await pool.connect();
+    
+    const query = `
+      SELECT d.*, e.nome_embarcacao, e.rgp 
+      FROM desembarques d 
+      LEFT JOIN embarcacoes e ON d.embarcacao_id = e.id 
+      WHERE d.id = $1
+    `;
+    
+    const result = await client.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Desembarque não encontrado'
+      });
+    }
+
+    // Processar dados JSON se existirem
+    const desembarque = result.rows[0];
+    
+    // Parsear espécies se existirem
+    if (desembarque.especies && typeof desembarque.especies === 'string') {
+      try {
+        desembarque.especies = JSON.parse(desembarque.especies);
+      } catch (e) {
+        console.warn('Erro ao parsear espécies:', e);
+      }
+    }
+    
+    // Parsear imagens se existirem
+    if (desembarque.imagens && typeof desembarque.imagens === 'string') {
+      try {
+        desembarque.imagens = JSON.parse(desembarque.imagens);
+      } catch (e) {
+        console.warn('Erro ao parsear imagens:', e);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: desembarque
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar desembarque:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para atualizar status do desembarque
+app.patch('/api/desembarques/:id/status', async (req, res) => {
+  let client;
+  try {
+    const { id } = req.params;
+    const { status, review_note } = req.body;
+    
+    client = await pool.connect();
+    
+    const query = `
+      UPDATE desembarques 
+      SET status = $1, review_note = $2, reviewed_at = CURRENT_TIMESTAMP 
+      WHERE id = $3 
+      RETURNING *
+    `;
+    
+    const result = await client.query(query, [status, review_note, id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Desembarque não encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Status atualizado com sucesso',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status do desembarque:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
     });
   } finally {
     if (client) {
@@ -608,8 +729,8 @@ async function startServer() {
       console.log(`📊 Banco de dados: vports`);
       console.log(`🔍 Health check: http://localhost:${port}/api/health`);
       console.log(`📋 Info do banco: http://localhost:${port}/api/database-info`);
-      console.log(`⛵ Formulário: http://localhost:${port}/form/embarcacao`);
-      console.log(`⛵ Formulário: http://localhost:${port}/form/desembarque`);
+      console.log(`⛵ Formulário embarcação: http://localhost:${port}/form/embarcacao`);
+      console.log(`🎣 Formulário desembarque: http://localhost:${port}/form/desembarque`);
       console.log(`👨‍💼 Admin: http://localhost:${port}/admin.html`);
     });
   } catch (error) {

@@ -390,3 +390,29 @@ th {
 /* .drawer.open + .drawer-overlay {
     display: block;
 } */
+.species-details {
+  margin: 15px 0;
+}
+
+.species-details table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.species-details th,
+.species-details td {
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.species-details th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.species-details tfoot {
+  background-color: #e9ecef;
+  font-weight: bold;
+}
