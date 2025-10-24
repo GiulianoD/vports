@@ -88,7 +88,7 @@ async function initializeDatabase() {
 }
 
 // Criar tabela no PostgreSQL COM OS CAMPOS DE STATUS
-async function createTable() {
+async function createTableEmbarcacoes() {
   try {
     const query = `
       CREATE TABLE IF NOT EXISTS embarcacoes (
@@ -96,8 +96,10 @@ async function createTable() {
         nome_embarcacao VARCHAR(255) NOT NULL,
         rgp VARCHAR(20) NOT NULL,
         tipo_casco VARCHAR(100) NOT NULL,
+        outro_tipo_casco VARCHAR(100),
         arqueacao_bruta DECIMAL(10,2) NOT NULL,
         tipo_propulsao VARCHAR(100) NOT NULL,
+        outro_tipo_propulsao VARCHAR(100),
         porto_base VARCHAR(255) NOT NULL,
         uf VARCHAR(2) NOT NULL,
         municipio VARCHAR(255) NOT NULL,
@@ -151,8 +153,10 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
       nomeEmbarcacao,
       rgp,
       tipoCasco,
+      outroTipoCasco,
       arqueacaoBruta,
       tipoPropulsao,
+      outroTipoPropulsao,
       portoBase,
       uf,
       municipio,
@@ -174,11 +178,11 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
 
     const query = `
       INSERT INTO embarcacoes (
-        nome_embarcacao, rgp, tipo_casco, 
-        arqueacao_bruta, tipo_propulsao, 
+        nome_embarcacao, rgp, tipo_casco, outro_tipo_casco, 
+        arqueacao_bruta, tipo_propulsao, outro_tipo_propulsao, 
         porto_base, uf, municipio, responsavel, contato, 
         observacoes, anexos, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
 
@@ -186,8 +190,10 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
       nomeEmbarcacao,
       rgp,
       tipoCasco,
+      outroTipoCasco || null,
       parseFloat(arqueacaoBruta),
       tipoPropulsao,
+      outroTipoPropulsao || null,
       portoBase,
       uf,
       municipio,
@@ -430,7 +436,7 @@ async function startServer() {
   try {
     console.log('🚀 Iniciando servidor...');
     await initializeDatabase();
-    await createTable();
+    await createTableEmbarcacoes();
     
     app.listen(port, () => {
       console.log(`✅ Servidor rodando na porta ${port}`);

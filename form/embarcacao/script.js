@@ -164,7 +164,16 @@
     const rgpVal = rgp.value.trim();
     if (!rgpVal || !/^\d{6}-?\d$/.test(rgpVal)) return "Informe um RGP válido (formato esperado: 6 dígitos + 1 dígito verificador, ex: 123456-7).";
   
-    // Removida a validação dos campos "Outro"
+    if (tipoCasco.value === "Outro") {
+      const outro = document.getElementById("outroTipoCasco").value.trim();
+      if (!outro) return "Especifique o Tipo de Casco (Outro).";
+    }
+
+    if (tipoPropulsao.value === "Outro") {
+      const outro = document.getElementById("outroTipoPropulsao").value.trim();
+      if (!outro) return "Especifique o Tipo de Propulsão (Outro).";
+    }
+
     const ab = Number(document.getElementById("arqueacaoBruta").value);
     if (Number.isNaN(ab) || ab < 0) return "Arqueação Bruta deve ser um número válido (≥ 0).";
   
