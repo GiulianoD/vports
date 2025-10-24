@@ -252,6 +252,18 @@
       kvPairs.push(`<b>${formatFieldName(k)}</b><div>${v.toString()}</div>`);
     });
 
+    // Gerar seção de imagens com miniaturas (apenas para desembarques)
+    let imagesSection = '';
+    if (coll === 'desembarque' && processedData.imagens && Array.isArray(processedData.imagens) && processedData.imagens.length > 0) {
+      imagesSection = `
+        <hr style="margin:12px 0;">
+        <h4>Imagens Anexadas</h4>
+        <div class="images-gallery">
+          ${renderImagesGallery(processedData.imagens)}
+        </div>
+      `;
+    }
+
     drawerBody.innerHTML = `
       <div class="drawer-body-content">
         <div class="kv">
@@ -273,6 +285,8 @@
           </div>
         ` : ''}
         
+        ${imagesSection}
+        
         <hr style="margin:12px 0;">
         <details>
           <summary>JSON bruto</summary>
@@ -287,6 +301,55 @@
 
     // Prevenir scroll do body quando drawer estiver aberto
     document.body.style.overflow = 'hidden';
+  }
+
+  // Função para renderizar galeria de imagens com miniaturas
+  function renderImagesGallery(imagens) {
+    if (!imagens || !Array.isArray(imagens) || imagens.length === 0) {
+      return '<p>Nenhuma imagem disponível</p>';
+    }
+
+    return `
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin: 15px 0;">
+        ${imagens.map(img => {
+          const fileName = img.nome || 'Arquivo sem nome';
+          const filePath = img.caminho || '';
+          const fileNameOnly = filePath.split('/').pop() || fileName;
+          const imageUrl = `/${fileNameOnly}`;
+          
+          return `
+            <div style="text-align: center;">
+              <a href="${imageUrl}" target="_blank" title="Abrir imagem em tamanho real">
+                <img 
+                  src="${imageUrl}" 
+                  alt="${fileName}"
+                  style="
+                    width: 100px; 
+                    height: 100px; 
+                    object-fit: cover; 
+                    border-radius: 6px; 
+                    border: 2px solid #e0e0e0;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                  "
+                  onerror="this.style.display='none'"
+                  onmouseover="this.style.borderColor='#3498db'"
+                  onmouseout="this.style.borderColor='#e0e0e0'"
+                >
+              </a>
+              <div style="margin-top: 5px; font-size: 11px; word-break: break-all;">
+                <a href="${imageUrl}" target="_blank" title="Abrir imagem em nova aba" style="color: #3498db; text-decoration: none;">
+                  ${fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div style="margin-top: 10px; font-size: 12px; color: #6c757d;">
+        <strong>${imagens.length}</strong> imagem(ns) anexada(s). Clique nas miniaturas ou nomes para abrir em nova aba.
+      </div>
+    `;
   }
 
   // Função para renderizar detalhes das espécies em formato de tabela
@@ -382,10 +445,23 @@
         processed.especies_formatted = 'Nenhuma espécie registrada';
       }
 
-      // Formatar imagens para exibição
+      // Formatar imagens para exibição com links
       if (processed.imagens && Array.isArray(processed.imagens)) {
         processed.imagens_formatted = processed.imagens
-          .map(img => img.nome || 'Arquivo sem nome')
+          .map(img => {
+            const fileName = img.nome || 'Arquivo sem nome';
+            const filePath = img.caminho || '';
+            
+            // Se tiver caminho, criar link para a imagem
+            if (filePath) {
+              // Extrair apenas o nome do arquivo do caminho completo
+              const fileNameOnly = filePath.split('/').pop() || fileName;
+              const imageUrl = `/${fileNameOnly}`;
+              return `<a href="${imageUrl}" target="_blank" title="Abrir imagem em nova aba">${fileName}</a>`;
+            } else {
+              return fileName;
+            }
+          })
           .join(', ');
       } else {
         processed.imagens_formatted = 'Nenhuma imagem anexada';

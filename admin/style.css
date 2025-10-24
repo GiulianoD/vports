@@ -416,3 +416,41 @@ th {
   background-color: #e9ecef;
   font-weight: bold;
 }
+
+/* Galeria de imagens no drawer */
+.images-gallery {
+  margin: 15px 0;
+}
+
+.images-gallery img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Links nas informações gerais */
+.kv a {
+  color: #3498db;
+  text-decoration: none;
+  border-bottom: 1px dotted #3498db;
+  transition: all 0.3s ease;
+}
+
+.kv a:hover {
+  color: #2980b9;
+  border-bottom: 1px solid #2980b9;
+}
+
+/* Estilo para quando a imagem não carrega */
+.image-error {
+  width: 100px;
+  height: 100px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 12px;
+  text-align: center;
+}
