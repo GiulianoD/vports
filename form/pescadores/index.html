@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Pescadores</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Cadastro de Pescadores</h1>
+      <p>Registre dados socioeconômicos e produtivos dos(as) pescadores(as)</p>
+    </header>
+
+    <form id="pescadorForm">
+      <!-- Identificação -->
+      <div class="form-section">
+        <h2>Identificação</h2>
+
+        <div class="form-group">
+          <label for="nomeCompleto">Nome completo *</label>
+          <input type="text" id="nomeCompleto" name="nomeCompleto" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="genero">Gênero *</label>
+            <select id="genero" name="genero" required>
+              <option value="">Selecione</option>
+              <option>Feminino</option>
+              <option>Masculino</option>
+            </select>
+            <div id="generoOutroContainer" class="hidden">
+              <input type="text" id="generoOutro" name="generoOutro" placeholder="Especifique">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="raca">Raça/Cor (IBGE) *</label>
+            <select id="raca" name="raca" required>
+              <option value="">Selecione</option>
+              <option>Branca</option>
+              <option>Parda</option>
+              <option>Preta</option>
+              <option>Amarela</option>
+              <option>Indígena</option>
+              <option>Prefiro não declarar</option>
+              <option>Outro</option>
+            </select>
+            <div id="racaOutroContainer" class="hidden">
+              <input type="text" id="racaOutro" name="racaOutro" placeholder="Especifique">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="idade">Idade *</label>
+            <input type="number" id="idade" name="idade" min="10" max="120" required>
+          </div>
+
+          <div class="form-group">
+            <label for="membrosFamilia">Qtde. de membros na família *</label>
+            <input type="number" id="membrosFamilia" name="membrosFamilia" min="1" max="30" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Localização -->
+      <div class="form-section">
+        <h2>Localização</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="uf">UF *</label>
+            <select id="uf" name="uf" required>
+              <option value="">Selecione</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+              <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+              <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+              <option>SP</option><option>SE</option><option>TO</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="municipio">Município *</label>
+            <select id="municipio" name="municipio" required>
+              <option value="">Selecione a UF primeiro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="bairroComunidade">Bairro/Comunidade</label>
+          <input type="text" id="bairroComunidade" name="bairroComunidade" placeholder="Ex: Comunidade X">
+        </div>
+
+        <div class="form-group">
+          <label for="endereco">Endereço (opcional)</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Rua, nº, complemento">
+        </div>
+
+        <div class="form-group">
+          <label for="localOndePesca">Local onde pesca *</label>
+          <input type="text" id="localOndePesca" name="localOndePesca" required placeholder="Ex: Baía de Vitória / Rio / Litoral ...">
+        </div>
+      </div>
+
+      <!-- Artes de pesca -->
+      <div class="form-section">
+        <h2>Principais artes de pesca</h2>
+        <div class="form-group">
+          <div class="checkbox-group" id="artesGroup">
+            <label><input type="checkbox" name="artes[]" value="Rede emalhar de fundo"> Rede emalhar de fundo</label>
+            <label><input type="checkbox" name="artes[]" value="Rede emalhar de meia água"> Rede emalhar de meia água</label>
+            <label><input type="checkbox" name="artes[]" value="Rede emalhar de superfície"> Rede emalhar de superfície</label>
+            <label><input type="checkbox" name="artes[]" value="Rede de arrasto"> Rede de arrasto</label>
+            <label><input type="checkbox" name="artes[]" value="Linha com anzol e isca"> Linha com anzol e isca</label>
+            <label><input type="checkbox" name="artes[]" value="Puça"> Puça</label>
+            <label class="inline">
+              <input type="checkbox" id="arteOutroChk"> Outro
+            </label>
+          </div>
+          <div id="arteOutroContainer" class="hidden" style="margin-top:8px;">
+            <input type="text" id="arteOutro" name="arteOutro" placeholder="Especifique outra arte">
+          </div>
+        </div>
+      </div>
+
+      <!-- Filiação -->
+      <div class="form-section">
+        <h2>Filiação</h2>
+        <div class="form-group">
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="filSindicato"> Sindicato</label>
+            <div id="filSindicatoContainer" class="hidden" style="margin-left:16px; margin-top:6px;">
+              <input type="text" id="filSindicatoNome" name="filSindicatoNome" placeholder="Nome do sindicato">
+            </div>
+
+            <label><input type="checkbox" id="filAssociacao"> Associação</label>
+            <div id="filAssociacaoContainer" class="hidden" style="margin-left:16px; margin-top:6px;">
+              <input type="text" id="filAssociacaoNome" name="filAssociacaoNome" placeholder="Nome da associação">
+            </div>
+
+            <label><input type="checkbox" id="filColonia"> Colônia de pesca</label>
+            <div id="filColoniaContainer" class="hidden" style="margin-left:16px; margin-top:6px;">
+              <input type="text" id="filColoniaNome" name="filColoniaNome" placeholder="Nome/identificação da colônia">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observações -->
+      <div class="form-section">
+        <h2>Observações</h2>
+        <div class="form-group">
+          <textarea id="observacoes" name="observacoes" rows="4" placeholder="Informações adicionais relevantes"></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-clear" id="btnLimpar">Limpar</button>
+        <button type="button" class="btn-add" id="btnRascunho">Salvar rascunho</button>
+        <button type="submit" class="btn-submit">Cadastrar Pescador(a)</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loader: db.js (se existir) antes de pescadores.js -->
+  <script>
+    (function(){
+      const v = Date.now();
+      const files = ["db.js","script.js"]; // se não tiver db.js, pode remover daqui e do projeto
+      (async () => {
+        for (const f of files) {
+          await new Promise((res, rej)=>{
+            const s = document.createElement("script");
+            s.src = `${f}?v=${v}`;
+            s.async = false;
+            s.onload = res;
+            s.onerror = () => {
+              // permite continuar mesmo sem db.js
+              if (f === "db.js") res(); else rej();
+            };
+            document.body.appendChild(s);
+          });
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
