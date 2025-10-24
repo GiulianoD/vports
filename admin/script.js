@@ -198,10 +198,16 @@
         ? `Embarcação — ${rec.nome_embarcacao || rec.id}`
         : `Desembarque — ${rec.embarcacao || rec.id}`;
 
+    // Processar os dados para agrupar campos "outro"
+    const processedData = processRecordData(rec);
+
     // corpo — chave/valor legível
     const kvPairs = [];
-    Object.keys(rec).forEach((k) => {
-      let v = rec[k];
+    Object.keys(processedData).forEach((k) => {
+      // Pular campos que começam com "outro_" pois já foram processados
+      if (k.startsWith('outro_')) return;
+      
+      let v = processedData[k];
       if (v === null || v === undefined) v = '';
       if (Array.isArray(v)) v = v.join(", ");
       if (typeof v === 'object') v = JSON.stringify(v);
@@ -231,9 +237,32 @@
     reviewNote.value = rec.review_note || "";
     drawer.classList.add("open");
     document.getElementById('drawerOverlay').style.display = 'block';
-    
+
     // Prevenir scroll do body quando drawer estiver aberto
     document.body.style.overflow = 'hidden';
+  }
+
+  function processRecordData(rec) {
+    const processed = {...rec};
+
+    // Mapeamento de campos principais para seus respectivos campos "outro"
+    const fieldMappings = {
+      'tipo_casco': 'outro_tipo_casco',
+      'tipo_propulsao': 'outro_tipo_propulsao'
+      // Adicione outros mapeamentos conforme necessário
+    };
+
+    // Processar cada mapeamento
+    Object.keys(fieldMappings).forEach(mainField => {
+      const outroField = fieldMappings[mainField];
+
+      // Se o campo principal for "Outro" e o campo "outro" tiver valor
+      if (processed[mainField] === 'Outro' && processed[outroField]) {
+        processed[mainField] = `Outro (${processed[outroField]})`;
+      }
+    });
+
+    return processed;
   }
 
   function formatFieldName(fieldName) {

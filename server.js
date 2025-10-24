@@ -444,6 +444,7 @@ async function startServer() {
       console.log(`🔍 Health check: http://localhost:${port}/api/health`);
       console.log(`📋 Info do banco: http://localhost:${port}/api/database-info`);
       console.log(`⛵ Formulário: http://localhost:${port}/form/embarcacao`);
+      console.log(`⛵ Formulário: http://localhost:${port}/form/desembarque`);
       console.log(`👨‍💼 Admin: http://localhost:${port}/admin.html`);
     });
   } catch (error) {
