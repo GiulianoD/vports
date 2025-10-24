@@ -147,7 +147,7 @@
             <tr>
               <td>${r.id}</td>
               <td>${statusBadge(r.status || 'pending')}</td>
-              <td>${new Date(r.created_at).toLocaleString()}</td>
+              <td>${formatDateTime(r.created_at)}</td>
               <td>${r.nome_embarcacao || ""}</td>
               <td>${r.rgp || ""}</td>
               <td>${r.uf || ""}/${r.municipio || ""}</td>
@@ -165,7 +165,7 @@
             <tr>
               <td>${r.id}</td>
               <td>${statusBadge(r.status || 'pending')}</td>
-              <td>${new Date(r.created_at).toLocaleString()}</td>
+              <td>${formatDateTime(r.created_at)}</td>
               <td>${embarcacaoNome} (${embarcacaoRgp})</td>
               <td>${formatDate(r.data_desembarque)}</td>
               <td>${r.local_desembarque || ""}</td>
@@ -219,6 +219,15 @@
     // Processar os dados para agrupar campos "outro"
     const processedData = processRecordData(rec, coll);
 
+    // Formatar campos de data específicos
+    if (processedData.data_saida) processedData.data_saida = formatDateTime(processedData.data_saida);
+    if (processedData.data_retorno) processedData.data_retorno = formatDateTime(processedData.data_retorno);
+    if (processedData.data_inicio_pesca) processedData.data_inicio_pesca = formatDateTime(processedData.data_inicio_pesca);
+    if (processedData.data_fim_pesca) processedData.data_fim_pesca = formatDateTime(processedData.data_fim_pesca);
+    if (processedData.created_at) processedData.created_at = formatDateTime(processedData.created_at);
+    if (processedData.reviewed_at) processedData.reviewed_at = formatDateTime(processedData.reviewed_at);
+    if (processedData.data_desembarque) processedData.data_desembarque = formatDate(processedData.data_desembarque);
+
     // corpo — chave/valor legível
     const kvPairs = [];
     Object.keys(processedData).forEach((k) => {
@@ -248,8 +257,8 @@
         <div class="kv">
           <b>ID</b><div>${rec.id}</div>
           <b>Status</b><div>${rec.status || 'pending'}</div>
-          <b>Enviado em</b><div>${new Date(rec.created_at).toLocaleString()}</div>
-          ${rec.reviewed_at ? `<b>Revisado em</b><div>${new Date(rec.reviewed_at).toLocaleString()}</div>` : ""}
+          <b>Enviado em</b><div>${formatDateTime(rec.created_at)}</div>
+          ${rec.reviewed_at ? `<b>Revisado em</b><div>${formatDateTime(rec.reviewed_at)}</div>` : ""}
           ${rec.review_note ? `<b>Observação</b><div>${rec.review_note}</div>` : ""}
         </div>
         <hr style="margin:12px 0;">
@@ -315,6 +324,7 @@
       </div>
     `;
   }
+
   function processRecordData(rec, coll) {
     const processed = {...rec};
 
@@ -434,14 +444,47 @@
     }
   }
 
+  // Função para formatar data/hora no formato brasileiro
   function formatDateTime(dateString) {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleString('pt-BR');
+      const date = new Date(dateString);
+
+      // Verificar se a data é válida
+      if (isNaN(date.getTime())) return 'Data inválida';
+
+      // Formatar para DD/MM/YYYY, HH:MM
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${day}/${month}/${year}, ${hours}:${minutes}`;
     } catch (e) {
+      console.warn('Erro ao formatar data:', e);
       return dateString;
     }
   }
+
+// Função para formatar apenas a data (sem hora)
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) return 'Data inválida';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  } catch (e) {
+    console.warn('Erro ao formatar data:', e);
+    return dateString;
+  }
+}
 
   function close() {
     drawer.classList.remove("open");
