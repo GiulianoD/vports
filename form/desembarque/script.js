@@ -241,7 +241,8 @@ function handleImageUpload(event) {
                         id: Date.now() + i, // ID único
                         name: file.name,
                         size: file.size,
-                        data: e.target.result
+                        type: file.type,
+                        data: e.target.result // Data URL
                     });
                     
                     updateImagePreview();
@@ -249,11 +250,28 @@ function handleImageUpload(event) {
                 
                 reader.readAsDataURL(file);
             }
+        } else {
+            alert('Por favor, selecione apenas arquivos de imagem.');
         }
     }
     
     // Limpar o input de arquivo para permitir selecionar os mesmos arquivos novamente
     event.target.value = '';
+}
+
+// Função para converter Data URL para Blob
+function dataURLtoBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new Blob([u8arr], { type: mime });
 }
 
 // Atualizar preview de imagens
@@ -303,6 +321,9 @@ function clearForm() {
         while (table.rows.length > 1) {
             table.deleteRow(1);
         }
+        
+        // Resetar select de embarcação
+        preencherSelectEmbarcacoes();
     }
 }
 
@@ -319,23 +340,22 @@ async function handleSubmit(event) {
             submitBtn.textContent = 'Enviando...';
             submitBtn.disabled = true;
 
-            // Preparar dados do formulário
+            // Criar FormData a partir do formulário
             const formData = new FormData(event.target);
             
-            // Adicionar imagens ao FormData
-            uploadedImages.forEach((image, index) => {
+            // Adicionar imagens ao FormData (CORRIGIDO)
+            uploadedImages.forEach((image) => {
                 // Converter data URL para blob
-                fetch(image.data)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        formData.append('imagens', blob, image.name);
-                    });
+                const blob = dataURLtoBlob(image.data);
+                formData.append('imagens', blob, image.name);
             });
+
+            console.log('Enviando formulário com', uploadedImages.length, 'imagens');
 
             // Enviar para o servidor
             const response = await fetch('/api/desembarques', {
                 method: 'POST',
-                body: formData
+                body: formData // Não definir Content-Type, o browser fará automaticamente com boundary
             });
 
             const result = await response.json();
