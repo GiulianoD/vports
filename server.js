@@ -6,7 +6,9 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+const ip = 'localhost';
 const port = 3000;
+const url_base = `http://${ip}:${port}`
 
 // Middleware
 app.use(cors());
@@ -727,11 +729,12 @@ async function startServer() {
     app.listen(port, () => {
       console.log(`✅ Servidor rodando na porta ${port}`);
       console.log(`📊 Banco de dados: vports`);
-      console.log(`🔍 Health check: http://localhost:${port}/api/health`);
-      console.log(`📋 Info do banco: http://localhost:${port}/api/database-info`);
-      console.log(`⛵ Formulário embarcação: http://localhost:${port}/form/embarcacao`);
-      console.log(`🎣 Formulário desembarque: http://localhost:${port}/form/desembarque`);
-      console.log(`👨‍💼 Admin: http://localhost:${port}/admin.html`);
+      console.log(`🔍 Health check: ${url_base}/api/health`);
+      console.log(`📋 Info do banco: ${url_base}/api/database-info`);
+      console.log(`⛵ Formulário embarcação: ${url_base}/form/embarcacao`);
+      console.log(`🎣 Formulário desembarque: ${url_base}/form/desembarque`);
+      console.log(`🎣 Formulário pescadores: ${url_base}/form/pescadores`);
+      console.log(`👨‍💼 Admin: ${url_base}/admin.html`);
     });
   } catch (error) {
     console.error('❌ Erro fatal ao iniciar servidor:', error);
