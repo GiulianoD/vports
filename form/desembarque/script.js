@@ -1,4 +1,3 @@
-// script.js
 // =======================================
 // Estado global
 // =======================================
@@ -14,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (form) {
     initForm();
 
-    // Listeners de esforço (se os campos existirem)
+    // Listeners de esforço
     const inicioEl = document.getElementById('dataInicioPesca');
     const fimEl = document.getElementById('dataFimPesca');
     if (inicioEl) inicioEl.addEventListener('change', calcularEsforco);
@@ -29,6 +28,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Carregar embarcações do backend
     carregarEmbarcacoes();
+
+    // Despesas (toggle)
+    initDespesasUI();
+
+    // Mapa (Leaflet)
+    initFishingMap();
   }
 
   // Nav deve iniciar em TODAS as páginas
@@ -40,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // =======================================
 async function carregarEmbarcacoes() {
   const selectEmbarcacao = document.getElementById('embarcacao');
-  if (!selectEmbarcacao) return; // esta página pode não ter o select
+  if (!selectEmbarcacao) return;
 
   try {
     console.log('Carregando embarcações...');
@@ -67,10 +72,8 @@ function preencherSelectEmbarcacoes() {
   const selectEmbarcacao = document.getElementById('embarcacao');
   if (!selectEmbarcacao) return;
 
-  // Limpar opções
   selectEmbarcacao.innerHTML = '';
 
-  // Opção padrão
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
   defaultOption.textContent = 'Selecione uma embarcação';
@@ -78,7 +81,6 @@ function preencherSelectEmbarcacoes() {
   defaultOption.selected = true;
   selectEmbarcacao.appendChild(defaultOption);
 
-  // Opções da API
   embarcacoesList.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
@@ -86,7 +88,6 @@ function preencherSelectEmbarcacoes() {
     selectEmbarcacao.appendChild(option);
   });
 
-  // Sem resultados
   if (embarcacoesList.length === 0) {
     const option = document.createElement('option');
     option.value = '';
@@ -110,7 +111,6 @@ function preencherEmbarcacoesFallback(mensagemErro) {
   selectEmbarcacao.appendChild(errorOption);
 
   const opcoesEstaticas = [{ id: 'fallback-1', nome: 'N/A', rgp: '000' }];
-
   opcoesEstaticas.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
@@ -126,16 +126,8 @@ function initForm() {
   const selectLocal = document.getElementById('localDesembarque');
   if (selectLocal) {
     const cidadesES = [
-      'Itaparica',
-      'Itapoã',
-      'Praia do Ribeiro',
-      'Praia da costa',
-      'Prainha',
-      'Praia do Suá/Canto',
-      'Enseada do Suá',
-      'Ilha das Caieiras',
-      'Santo Antônio',
-      'Grande Vitória',
+      'Itaparica','Itapoã','Praia do Ribeiro','Praia da costa','Prainha',
+      'Praia do Suá/Canto','Enseada do Suá','Ilha das Caieiras','Santo Antônio','Grande Vitória',
     ];
     cidadesES.forEach((cidade) => {
       const option = document.createElement('option');
@@ -145,7 +137,7 @@ function initForm() {
     });
   }
 
-  updateImagePreview(); // se não houver container, a função já protege
+  updateImagePreview();
 }
 
 // =======================================
@@ -159,10 +151,12 @@ function addRow() {
   const cell1 = newRow.insertCell(0);
   const cell2 = newRow.insertCell(1);
   const cell3 = newRow.insertCell(2);
+  const cell4 = newRow.insertCell(3);
 
   cell1.innerHTML = '<input type="text" name="especie[]" placeholder="Nome da espécie">';
   cell2.innerHTML = '<input type="number" name="quantidade[]" min="0" step="0.1" placeholder="Kg">';
-  cell3.innerHTML = '<button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button>';
+  cell3.innerHTML = '<input type="number" name="valorKg[]" min="0" step="0.01" placeholder="0,00" inputmode="decimal">';
+  cell4.innerHTML = '<button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button>';
 }
 
 function removeRow(button) {
@@ -184,7 +178,6 @@ function toggleOutroDestinacao() {
   const select = document.getElementById('destinacao');
   const container = document.getElementById('outroDestinacaoContainer');
   if (!select || !container) return;
-
   if (select.value === 'Outro') container.classList.remove('hidden');
   else container.classList.add('hidden');
 }
@@ -193,7 +186,6 @@ function toggleOutroArtePesca() {
   const select = document.getElementById('artePesca');
   const container = document.getElementById('outroArtePescaContainer');
   if (!select || !container) return;
-
   if (select.value === 'Outro') container.classList.remove('hidden');
   else container.classList.add('hidden');
 }
@@ -237,7 +229,6 @@ function handleImageUpload(event) {
       continue;
     }
 
-    // evitar duplicados
     const isDuplicate = uploadedImages.some((img) => img.name === file.name && img.size === file.size);
     if (isDuplicate) continue;
 
@@ -248,14 +239,12 @@ function handleImageUpload(event) {
         name: file.name,
         size: file.size,
         type: file.type,
-        data: e.target.result, // Data URL
+        data: e.target.result,
       });
       updateImagePreview();
     };
     reader.readAsDataURL(file);
   }
-
-  // Permitir re-selecionar os mesmos arquivos depois
   event.target.value = '';
 }
 
@@ -323,6 +312,17 @@ function clearForm() {
 
     // Resetar select de embarcação
     preencherSelectEmbarcacoes();
+
+    // Despesas
+    const has = document.getElementById('hasDespesas');
+    const cont = document.getElementById('despesasContainer');
+    const val = document.getElementById('totalDespesas');
+    if (has) has.checked = false;
+    if (val) val.value = '';
+    if (cont) cont.classList.add('hidden');
+
+    // Mapa
+    clearFishingPoint();
   }
 }
 
@@ -343,7 +343,7 @@ async function handleSubmit(event) {
 
     const formData = new FormData(form);
 
-    // Anexa imagens (convertendo DataURL -> Blob)
+    // Anexa imagens convertidas
     uploadedImages.forEach((image) => {
       const blob = dataURLtoBlob(image.data);
       formData.append('imagens', blob, image.name);
@@ -407,6 +407,22 @@ function validarFormulario() {
     return false;
   }
 
+  // Se marcar despesas, exige valor válido
+  const has = document.getElementById('hasDespesas');
+  const val = document.getElementById('totalDespesas');
+  if (has?.checked) {
+    const num = Number(val?.value);
+    if (!Number.isFinite(num) || num < 0) {
+      alert('Informe um valor válido para Total de Despesas.');
+      return false;
+    }
+  }
+
+  // Se usar mapa, opcional: exigir ponto marcado
+  // const lat = document.getElementById('latPesca')?.value;
+  // const lng = document.getElementById('lngPesca')?.value;
+  // if (!lat || !lng) { alert('Marque o local da pesca no mapa.'); return false; }
+
   return true;
 }
 
@@ -425,12 +441,12 @@ function initGlobalNav() {
 
   const routes = {
     desembarque: root + '/desembarque/index.html',
-    embarcacao: root + '/embarcacao/index.html', // ✅ singular
+    embarcacao: root + '/embarcacao/index.html', // singular
     pescadores: root + '/pescadores/index.html',
   };
 
   const l1 = document.getElementById('linkDesembarque');
-  const l2 = document.getElementById('linkEmbarcacao'); // ✅ ID singular
+  const l2 = document.getElementById('linkEmbarcacao');
   const l3 = document.getElementById('linkPescadores');
 
   if (l1) l1.href = routes.desembarque;
@@ -462,4 +478,138 @@ function initGlobalNav() {
   linksEl.addEventListener('click', function (e) {
     e.stopPropagation();
   });
+}
+
+// =======================================
+// Despesas — toggle e máscara simples
+// =======================================
+function initDespesasUI(){
+  const hasEl = document.getElementById('hasDespesas');
+  const container = document.getElementById('despesasContainer');
+  const input = document.getElementById('totalDespesas');
+
+  if (!hasEl || !container || !input) return;
+
+  const update = () => {
+    container.classList.toggle('hidden', !hasEl.checked);
+    if (!hasEl.checked) input.value = '';
+  };
+  hasEl.addEventListener('change', update);
+  update();
+
+  // (opcional) normalização de decimal com vírgula
+  input.addEventListener('blur', () => {
+    if (!input.value) return;
+    const val = input.value.replace(',', '.');
+    const num = Number(val);
+    if (Number.isFinite(num)) input.value = num.toFixed(2);
+  });
+}
+
+// =======================================
+// MAPA — Marcação do local de pesca (Leaflet)
+// =======================================
+let mapPescaInstance = null;
+let mapPescaMarker = null;
+
+// limites aproximados da Grande Vitória
+const GV_BOUNDS = L.latLngBounds(
+  L.latLng(-20.55, -40.60),  // sudoeste
+  L.latLng(-19.95, -40.00)   // nordeste
+);
+
+// ponto e zoom iniciais (Vitória/ES)
+const GV_CENTER = [-20.3155, -40.3128];
+const GV_ZOOM   = 11;
+
+function initFishingMap(){
+  const mapEl = document.getElementById('mapPesca');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  // Cria mapa
+  mapPescaInstance = L.map('mapPesca', {
+    center: GV_CENTER,
+    zoom: GV_ZOOM,
+    maxBounds: GV_BOUNDS,
+    maxBoundsViscosity: 0.7,
+    tap: true
+  });
+
+  // Camada base (OpenStreetMap)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(mapPescaInstance);
+
+  // Clique/toque -> define marcador
+  mapPescaInstance.on('click', (e) => {
+    setFishingPoint(e.latlng.lat, e.latlng.lng);
+  });
+
+  // Botões
+  const btnClear = document.getElementById('btnLimparMarcacao');
+  const btnLocate = document.getElementById('btnMinhaPosicao');
+  btnClear?.addEventListener('click', clearFishingPoint);
+  btnLocate?.addEventListener('click', locateMeOnMap);
+}
+
+function setFishingPoint(lat, lng){
+  const latEl = document.getElementById('latPesca');
+  const lngEl = document.getElementById('lngPesca');
+  if (!latEl || !lngEl) return;
+
+  if (!mapPescaMarker) {
+    mapPescaMarker = L.marker([lat, lng], { draggable: true }).addTo(mapPescaInstance);
+    mapPescaMarker.on('dragend', (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      writeFishingPoint(lat, lng);
+    });
+  } else {
+    mapPescaMarker.setLatLng([lat, lng]);
+  }
+
+  writeFishingPoint(lat, lng);
+  mapPescaInstance.flyTo([lat, lng], Math.max(mapPescaInstance.getZoom(), 12));
+}
+
+function writeFishingPoint(lat, lng){
+  const latEl = document.getElementById('latPesca');
+  const lngEl = document.getElementById('lngPesca');
+  const readout = document.getElementById('mapReadout');
+
+  latEl.value = lat.toFixed(6);
+  lngEl.value = lng.toFixed(6);
+  if (readout) readout.textContent = `Ponto selecionado: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+function clearFishingPoint(){
+  const latEl = document.getElementById('latPesca');
+  const lngEl = document.getElementById('lngPesca');
+  const readout = document.getElementById('mapReadout');
+
+  if (mapPescaMarker && mapPescaInstance) {
+    mapPescaInstance.removeLayer(mapPescaMarker);
+    mapPescaMarker = null;
+  }
+  if (latEl) latEl.value = '';
+  if (lngEl) lngEl.value = '';
+  if (readout) readout.textContent = 'Nenhum ponto selecionado';
+}
+
+function locateMeOnMap(){
+  if (!navigator.geolocation) {
+    alert('Geolocalização não suportada pelo navegador.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setFishingPoint(lat, lng);
+    },
+    (err) => {
+      alert('Não foi possível obter sua localização.');
+      console.warn(err);
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
 }
