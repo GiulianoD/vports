@@ -9,6 +9,66 @@
        * Se houver DB.addPescador -> usa
        * Caso contrário, salva em localStorage (db_pescadores)
    ========================================================= */
+// ====================== NAV GLOBAL ======================
+function initGlobalNav(){
+  const linksEl = document.getElementById('navLinks');
+  const toggleEl = document.getElementById('navToggle');
+  if (!linksEl) return; // página sem nav
+
+  const parts = location.pathname.split('/').filter(Boolean);
+  const rootParts = parts.length >= 2 ? parts.slice(0, parts.length - 2) : [];
+  const root = '/' + rootParts.join('/');
+
+  const routes = {
+    desembarque: root + '/desembarque/index.html',
+    embarcacao: root + '/embarcacao/index.html',
+    pescadores: root + '/pescadores/index.html',
+  };
+
+  const l1 = document.getElementById('linkDesembarque');
+  const l2 = document.getElementById('linkEmbarcacao');
+  const l3 = document.getElementById('linkPescadores');
+
+  if (l1) l1.href = routes.desembarque;
+  if (l2) l2.href = routes.embarcacao;
+  if (l3) l3.href = routes.pescadores;
+
+  const path = location.pathname;
+  if (l1 && path.includes('/desembarque/')) l1.classList.add('active');
+  if (l2 && path.includes('/embarcacao/')) l2.classList.add('active');
+  if (l3 && path.includes('/pescadores/')) l3.classList.add('active');
+
+  // Toggle mobile
+  toggleEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    linksEl.classList.toggle('open');
+    toggleEl.setAttribute('aria-expanded', linksEl.classList.contains('open') ? 'true' : 'false');
+  });
+
+  // Evita fechar ao clicar dentro
+  linksEl?.addEventListener('click', (e) => e.stopPropagation());
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!linksEl.contains(e.target) && !toggleEl.contains(e.target)) {
+      linksEl.classList.remove('open');
+      toggleEl?.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// 🔧 Envolva TODO o restante no DOMContentLoaded e **sempre** inicie o NAV:
+document.addEventListener('DOMContentLoaded', () => {
+  // 1) Inicializa o menu SEMPRE
+  initGlobalNav();
+
+  // 2) A partir daqui, só roda o código do formulário se ele existir
+  const form = document.getElementById("pescadorForm");
+  if (!form) return;
+
+  // ... (todo o SEU código atual do formulário vai aqui, inalterado) ...
+});
+
 
 (function () {
   const form = document.getElementById("pescadorForm");

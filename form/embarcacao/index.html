@@ -7,6 +7,36 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- NAV: Menu com duas logos e opções centralizadas -->
+  <nav class="top-nav" aria-label="Menu principal">
+    <div class="nav-inner">
+      <!-- Logo esquerda -->
+      <div class="nav-logo-left">
+        <img src="/res/evl/logo.200.png" alt="Logo EVL" class="logo-left">
+      </div>
+
+      <!-- Botão hambúrguer (mobile) -->
+      <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+      </button>
+
+      <!-- Links centrais -->
+      <ul id="navLinks" class="nav-links">
+        <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
+        <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
+        <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+      </ul>
+
+      <!-- Logo direita -->
+      <div class="nav-logo-right">
+        <!-- Se o arquivo tem espaço no nome, use %20 -->
+        <img src="/res/vports/Marca_Vports-05%204.png" alt="Logo VPorts" class="logo-right">
+      </div>
+    </div>
+  </nav>
+
   <div class="container">
     <header>
       <h1>Cadastro de Embarcação</h1>
@@ -24,13 +54,13 @@
         </div>
 
         <div class="form-group">
-          <label for="rgp">Numero de Inscrição*</label>
+          <label for="rgp">Número de Inscrição *</label>
           <input type="text" id="rgp" name="rgp" required placeholder="Ex: 123456-7">
         </div>
 
         <div class="form-group">
-          <label for="rgp">Numero de Tripulantes*</label>
-          <input type="number" id="rgp" name="rgp" required placeholder="Ex: 12">
+          <label for="numTripulantes">Número de Tripulantes *</label>
+          <input type="number" id="numTripulantes" name="numTripulantes" required placeholder="Ex: 12" min="0" step="1">
         </div>
 
         <div class="form-row">
@@ -116,24 +146,23 @@
           <input type="text" id="responsavel" name="responsavel" required placeholder="Nome completo">
         </div>
         <div class="form-group">
-          <label for="responsavel">Número do Registro</label>
-          <input type="text" id="responsavel" name="responsavel" required placeholder="">
+          <label for="registroResponsavel">Número do Registro</label>
+          <input type="text" id="registroResponsavel" name="registroResponsavel" placeholder="">
         </div>
 
         <div class="form-group">
-        <label for="associado">Cadastrado em alguma associação? *</label>
-        <select id="associado" name="associado" required onchange="toggleAssociacao()">
-          <option value="">Selecione</option>
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-      </div>
+          <label for="associado">Cadastrado em alguma associação? *</label>
+          <select id="associado" name="associado" required onchange="toggleAssociacao()">
+            <option value="">Selecione</option>
+            <option value="Não">Não</option>
+            <option value="Sim">Sim</option>
+          </select>
+        </div>
 
-      <div class="form-group hidden" id="associacaoContainer">
-        <label for="associacaoNome">Nome da Associação *</label>
-        <input type="text" id="associacaoNome" name="associacaoNome" placeholder="Ex: Colônia de Pescadores Z-1">
-      </div>
-
+        <div class="form-group hidden" id="associacaoContainer">
+          <label for="associacaoNome">Nome da Associação *</label>
+          <input type="text" id="associacaoNome" name="associacaoNome" placeholder="Ex: Colônia de Pescadores Z-1">
+        </div>
 
         <div class="form-row">
           <div class="form-group">
@@ -172,18 +201,7 @@
     </form>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const version = new Date().getTime();
-      const scripts = ["script.js"];
-      
-      scripts.forEach(src => {
-        const s = document.createElement("script");
-        s.src = `${src}?v=${version}`;
-        s.async = false;
-        document.body.appendChild(s);
-      });
-    });
-  </script>
+  <!-- Carrega o script com cache-busting -->
+<script src="script.js"></script>
 </body>
 </html>

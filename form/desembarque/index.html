@@ -7,6 +7,37 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- NAV: Menu responsivo -->
+    <nav class="top-nav" aria-label="Menu principal">
+    <div class="nav-inner">
+        <!-- Logo esquerda -->
+        <div class="nav-logo-left">
+        <img src="/res/evl/logo.200.png"
+            alt="Logo EVL" class="logo-left">
+        </div>
+
+        <!-- Botão hambúrguer (mobile) -->
+        <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        </button>
+
+        <!-- Links centrais -->
+        <ul id="navLinks" class="nav-links">
+        <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
+        <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
+        <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+        </ul>
+
+        <!-- Logo direita -->
+        <div class="nav-logo-right">
+        <img src="/res/vports/Marca_Vports-05%204.png"
+            alt="Logo VPorts" class="logo-right">
+        </div>
+    </div>
+    </nav>
+
     <div class="container">
         <header>
             <h1>Registro de Desembarque Pesqueiro</h1>
@@ -174,5 +205,28 @@
     </div>
 
     <script src="script.js"></script>
+    <!-- Script do menu deve vir após o script principal -->
+<!-- <script>
+document.addEventListener('DOMContentLoaded', function(){
+  const linksEl  = document.getElementById('navLinks');
+  const toggleEl = document.getElementById('navToggle');
+  if (!linksEl || !toggleEl) return;
+
+  toggleEl.addEventListener('click', function(e){
+    e.stopPropagation();
+    linksEl.classList.toggle('open');
+    toggleEl.setAttribute('aria-expanded', linksEl.classList.contains('open') ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', function(e){
+    if (!linksEl.contains(e.target) && !toggleEl.contains(e.target)) {
+      linksEl.classList.remove('open');
+      toggleEl.setAttribute('aria-expanded', 'false');
+    }
+  });
+});
+</script> -->
+
+
 </body>
 </html>
