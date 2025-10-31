@@ -12,6 +12,7 @@
   
   <!-- ======== CSS ======== -->
   <link rel="stylesheet" href="style.css?v=1.1">
+  <link rel="stylesheet" href="../navbar.css?v=1.1">
 </head>
 <body>
   <!-- NAV: Menu com duas logos e opções centralizadas -->
@@ -34,6 +35,13 @@
         <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
         <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
         <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+        
+        <!-- Botão de Logout -->
+        <li class="logout-item">
+          <button id="btnLogout" class="btn-logout" title="Sair do sistema">
+            <span class="logout-text">Sair</span>
+          </button>
+        </li>
       </ul>
 
       <!-- Logo direita -->
@@ -252,7 +260,8 @@
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
         "script.js",
-        "../auth/logout.js"
+        "../navbar.js",
+        "../../auth/logout.js"
     ];
 
     scripts.forEach(script => {

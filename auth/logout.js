@@ -1,4 +1,4 @@
-const pagLogin = '../auth/';
+const pagLogin = '../../auth/';
 
 function obterAccessToken() {
     const accessToken = localStorage.getItem('accessToken');
@@ -7,6 +7,9 @@ function obterAccessToken() {
 
 // FUNÇÃO LOGOUT
 function deleteTokenAndRedirect() {
+    if (!confirm('Tem certeza que deseja sair do sistema?')) {
+        return;
+    }
     // Remover o accessToken e dados do usuário do localStorage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userData');
