@@ -4,7 +4,13 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cadastro de Embarcação</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- Meta tags para evitar cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <!-- ======== CSS ======== -->
+  <link rel="stylesheet" href="style.css?v=1.1">
 </head>
 <body>
   <!-- NAV: Menu com duas logos e opções centralizadas -->
@@ -201,7 +207,25 @@
     </form>
   </div>
 
-  <!-- Carrega o script com cache-busting -->
-<script src="script.js"></script>
+  <!-- FORÇA OS SCRIPTS ESTAREM SEMPRE ATUALIZADOS -->
+  <script>
+    // Função para obter o timestamp atual
+    function getTimestamp() {
+        return new Date().getTime();
+    }
+
+    // Adicionando o timestamp aos scripts para evitar cache
+    const scripts = [
+        "script.js",
+        "../auth/logout.js"
+    ];
+
+    scripts.forEach(script => {
+        const scriptElement = document.createElement('script');
+        scriptElement.src = script + '?v=' + getTimestamp();
+        scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
+        document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
+    });
+  </script>
 </body>
 </html>
