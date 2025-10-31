@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Environlink</title>
+    <!-- Meta tags para evitar cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- ======== CSS ======== -->
+    <link rel="stylesheet" href="style.css?v=1.1">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Environlink</h1>
+            <p>Sistema de Gerenciamento Portuário - VPorts</p>
+        </div>
+        
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="nome">Usuário</label>
+                <input type="text" id="nome" name="nome" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+            
+            <button type="submit" class="btn-login">Entrar</button>
+        </form>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="login-footer">
+            <p>© 2025 Environlink - Todos os direitos reservados</p>
+        </div>
+    </div>
+
+    <!-- FORÇA OS SCRIPTS ESTAREM SEMPRE ATUALIZADOS -->
+    <script>
+        // Função para obter o timestamp atual
+        function getTimestamp() {
+            return new Date().getTime();
+        }
+
+        // Adicionando o timestamp aos scripts para evitar cache
+        const scripts = [
+            "script.js",
+            "../auth/logout.js"
+        ];
+
+        scripts.forEach(script => {
+            const scriptElement = document.createElement('script');
+            scriptElement.src = script + '?v=' + getTimestamp();
+            scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
+            document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
+        });
+    </script>
+</body>
+</html>

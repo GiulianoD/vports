@@ -4,11 +4,14 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const ip = 'localhost';
 const port = 3000;
 const url_base = `http://${ip}:${port}`
+const JWT_SECRET = 'sua_chave_secreta_jwt_aqui'; // Em produção, use variável de ambiente
 
 // Middleware
 app.use(cors());
@@ -19,6 +22,7 @@ app.use('/uploads', express.static('uploads'));
 // Servir arquivos estáticos da pasta form
 app.use(express.static(path.join(__dirname))); // Serve a raiz do projeto
 app.use('/form', express.static(path.join(__dirname, 'form'))); // Serve a pasta form
+app.use('/auth', express.static(path.join(__dirname, 'auth'))); // Serve a pasta auth
 
 // Configuração do PostgreSQL
 const dbConfig = {
@@ -85,6 +89,55 @@ async function initializeDatabase() {
 
   } catch (error) {
     console.error('❌ Erro ao conectar ao banco vports:', error.message);
+    throw error;
+  }
+}
+
+// Criar tabela para usuários
+async function createTableUsuarios() {
+  try {
+    const query = `
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(255) NOT NULL UNIQUE,
+        senha VARCHAR(255) NOT NULL,
+        funcao VARCHAR(50) NOT NULL CHECK (funcao IN ('Admin', 'Vila Velha', 'Vitória Leste', 'Vitória Oeste')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await pool.query(query);
+    console.log('✅ Tabela usuarios criada/verificada com sucesso!');
+
+    // Inserir usuários padrão se a tabela estiver vazia
+    const userCount = await pool.query('SELECT COUNT(*) FROM usuarios');
+    if (parseInt(userCount.rows[0].count) === 0) {
+      const usuariosPadrao = [
+        { nome: 'admin', senha: 'admin123', funcao: 'Admin' },
+        { nome: 'monitorVV', senha: 'senha123', funcao: 'Vila Velha' },
+        { nome: 'monitorVixL', senha: 'senha123', funcao: 'Vitória Leste' },
+        { nome: 'monitorVixO', senha: 'senha123', funcao: 'Vitória Oeste' }
+      ];
+
+      for (const usuario of usuariosPadrao) {
+        const hashedPassword = await bcrypt.hash(usuario.senha, 10);
+        await pool.query(
+          'INSERT INTO usuarios (nome, senha, funcao) VALUES ($1, $2, $3)',
+          [usuario.nome, hashedPassword, usuario.funcao]
+        );
+        console.log(`✅ Usuário ${usuario.nome} criado (senha: ${usuario.senha})`);
+      }
+
+      console.log('🎉 Todos os usuários padrão foram criados com sucesso!');
+      console.log('📋 Lista de usuários disponíveis:');
+      console.log('   👑 Admin: admin / admin123');
+      console.log('   🏖️ Vila Velha: monitorvVV / senha123');
+      console.log('   🌅 Vitória Leste: monitorVixL / senha123');
+      console.log('   🌇 Vitória Oeste: monitorVixO / senha123');
+    } else {
+      console.log('✅ Tabela de usuários já contém registros, mantendo dados existentes.');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar tabela usuarios:', error);
     throw error;
   }
 }
@@ -160,6 +213,43 @@ async function createTableDesembarques() {
   }
 }
 
+// Middleware de autenticação JWT
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Token de acesso requerido'
+    });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({
+        success: false,
+        message: 'Token inválido ou expirado'
+      });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+// Middleware para verificar função de usuário
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.funcao)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso negado. Permissões insuficientes.'
+      });
+    }
+    next();
+  };
+}
+
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -182,8 +272,188 @@ const upload = multer({
   }
 });
 
+// ROTAS DE AUTENTICAÇÃO
+
+// Rota de login
+app.post('/api/auth/login', async (req, res) => {
+  let client;
+  try {
+    const { nome, senha } = req.body;
+
+    if (!nome || !senha) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome de usuário e senha são obrigatórios'
+      });
+    }
+
+    client = await pool.connect();
+    
+    // Buscar usuário pelo nome
+    const result = await client.query(
+      'SELECT * FROM usuarios WHERE nome = $1',
+      [nome]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciais inválidas'
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Verificar senha
+    const validPassword = await bcrypt.compare(senha, user.senha);
+    if (!validPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Credenciais inválidas'
+      });
+    }
+
+    // Gerar token JWT
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        nome: user.nome, 
+        funcao: user.funcao 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Login realizado com sucesso',
+      token,
+      user: {
+        id: user.id,
+        nome: user.nome,
+        funcao: user.funcao
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro no login:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para verificar token
+app.get('/api/auth/verify', authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user
+  });
+});
+
+// Rota para criar usuário (apenas admin)
+app.post('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req, res) => {
+  let client;
+  try {
+    const { nome, senha, funcao } = req.body;
+
+    if (!nome || !senha || !funcao) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nome, senha e função são obrigatórios'
+      });
+    }
+
+    // Validar função
+    const funcoesValidas = ['Admin', 'Vila Velha', 'Vitória Leste', 'Vitória Oeste'];
+    if (!funcoesValidas.includes(funcao)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Função inválida'
+      });
+    }
+
+    client = await pool.connect();
+    
+    // Verificar se usuário já existe
+    const userExists = await client.query(
+      'SELECT id FROM usuarios WHERE nome = $1',
+      [nome]
+    );
+
+    if (userExists.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Usuário já existe'
+      });
+    }
+
+    // Hash da senha
+    const hashedPassword = await bcrypt.hash(senha, 10);
+
+    // Inserir usuário
+    const result = await client.query(
+      'INSERT INTO usuarios (nome, senha, funcao) VALUES ($1, $2, $3) RETURNING id, nome, funcao',
+      [nome, hashedPassword, funcao]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Usuário criado com sucesso',
+      data: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao criar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// Rota para listar usuários (apenas admin)
+app.get('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.query(
+      'SELECT id, nome, funcao, created_at FROM usuarios ORDER BY created_at DESC'
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar usuários:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+});
+
+// ROTAS EXISTENTES (protegidas com autenticação)
+
 // Rota para salvar os dados do formulário
-app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
+app.post('/api/embarcacoes', authenticateToken, upload.array('anexos', 10), async (req, res) => {
+  // ... código existente mantido igual ...
   let client;
   try {
     client = await pool.connect();
@@ -266,7 +536,8 @@ app.post('/api/embarcacoes', upload.array('anexos', 10), async (req, res) => {
 });
 
 // Rota para listar todas as embarcações
-app.get('/api/embarcacoes', async (req, res) => {
+app.get('/api/embarcacoes', authenticateToken, async (req, res) => {
+  // ... código existente mantido igual ...
   let client;
   try {
     client = await pool.connect();
@@ -682,7 +953,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Rota para informações do banco
-app.get('/api/database-info', async (req, res) => {
+app.get('/api/database-info', authenticateToken, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -723,14 +994,18 @@ async function startServer() {
   try {
     console.log('🚀 Iniciando servidor...');
     await initializeDatabase();
+    await createTableUsuarios();
     await createTableEmbarcacoes();
     await createTableDesembarques();
     
     app.listen(port, () => {
       console.log(`✅ Servidor rodando na porta ${port}`);
       console.log(`📊 Banco de dados: vports`);
+      console.log(`🔐 Sistema de autenticação: Ativo`);
+      console.log(`👤 Usuário admin padrão: admin / admin123`);
       console.log(`🔍 Health check: ${url_base}/api/health`);
       console.log(`📋 Info do banco: ${url_base}/api/database-info`);
+      console.log(`🔑 Login: ${url_base}/auth/index.html`);
       console.log(`⛵ Formulário embarcação: ${url_base}/form/embarcacao`);
       console.log(`🎣 Formulário desembarque: ${url_base}/form/desembarque`);
       console.log(`🎣 Formulário pescadores: ${url_base}/form/pescadores`);
