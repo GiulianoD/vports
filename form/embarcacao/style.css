@@ -396,7 +396,6 @@ body { padding-top: 64px; } /* evita que o conteúdo fique sob o nav fixo */
   .brand{ font-size: 14px; }
 }
 /* ===== NAVBAR COM DUAS LOGOS ===== */
-/* ===== NAVBAR COM DUAS LOGOS ===== */
 .top-nav{
   position: fixed;
   top: 0; left: 0; right: 0;

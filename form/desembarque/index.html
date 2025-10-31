@@ -1,12 +1,41 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registro de Desembarque Pesqueiro</title>
-
-  <!-- CSS do projeto -->
   <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- NAV: Menu com duas logos e opções centralizadas -->
+  <nav class="top-nav" aria-label="Menu principal">
+    <div class="nav-inner">
+      <!-- Logo esquerda -->
+      <div class="nav-logo-left">
+        <img src="/res/evl/logo.200.png" alt="Logo EVL" class="logo-left">
+      </div>
+
+      <!-- Botão hambúrguer (mobile) -->
+      <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+      </button>
+
+      <!-- Links centrais -->
+      <ul id="navLinks" class="nav-links">
+        <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
+        <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
+        <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+      </ul>
+
+      <!-- Logo direita -->
+      <div class="nav-logo-right">
+        <!-- Se o arquivo tem espaço no nome, use %20 -->
+        <img src="/res/vports/Marca_Vports-05%204.png" alt="Logo VPorts" class="logo-right">
+      </div>
+    </div>
+  </nav>
 
   <!-- Leaflet (Mapa) -->
   <link
@@ -20,37 +49,7 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
-</head>
-<body>
-  <!-- NAV: Menu responsivo com duas logos -->
-  <nav class="top-nav" aria-label="Menu principal">
-    <div class="nav-inner">
-      <!-- Logo esquerda -->
-      <div class="nav-logo-left">
-        <!-- use seu caminho real; exemplo abaixo usa o que você já vinha usando -->
-        <img src="/res/evl/logo.200.png" alt="Logo EVL" class="logo-left">
-      </div>
 
-      <!-- Botão hambúrguer (mobile) -->
-      <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
-        <span class="bar" aria-hidden="true"></span>
-        <span class="bar" aria-hidden="true"></span>
-        <span class="bar" aria-hidden="true"></span>
-      </button>
-
-      <!-- Links centrais -->
-      <ul id="navLinks" class="nav-links">
-        <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
-        <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcação</a></li>
-        <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
-      </ul>
-
-      <!-- Logo direita -->
-      <div class="nav-logo-right">
-        <img src="/res/vports/Marca_Vports-05 4.png" alt="Logo VPorts" class="logo-right">
-      </div>
-    </div>
-  </nav>
 
   <div class="container">
     <header>
@@ -93,34 +92,32 @@
 
       <!-- ========= CAPTURA ========= -->
       <div class="form-section">
-      <h2>Captura</h2>
+        <h2>Captura</h2>
 
-      <div class="form-group">
+        <div class="form-group">
           <label>Espécies Capturadas</label>
           <div class="table-container">
-          <table id="especiesTable">
+            <table id="especiesTable">
               <thead>
-              <tr>
+                <tr>
                   <th>Espécie</th>
                   <th>Quantidade (Kg)</th>
                   <th>Valor médio do Kg (R$)</th>
                   <th>Ações</th>
-              </tr>
+                </tr>
               </thead>
               <tbody>
-              <tr>
-                <td><input type="text" name="especie[]" placeholder="Nome da espécie"></td>
-                <td><input type="number" name="quantidade[]" min="0" step="0.1" placeholder="Kg"></td>
-                <td><input type="number" name="valorKg[]" min="0" step="0.01" placeholder="0,00" inputmode="decimal"></td>
-                <td><button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button></td>
-              </tr>
+                <tr>
+                  <td><input type="text" name="especie[]" placeholder="Nome da espécie"></td>
+                  <td><input type="number" name="quantidade[]" min="0" step="0.1" placeholder="Kg"></td>
+                  <td><input type="number" name="valorKg[]" min="0" step="0.01" placeholder="0,00" inputmode="decimal"></td>
+                  <td><button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button></td>
+                </tr>
               </tbody>
-          </table>
-        <button type="button" class="btn-add" onclick="addRow()">Adicionar Espécie</button>
+            </table>
+            <button type="button" class="btn-add" onclick="addRow()">Adicionar Espécie</button>
           </div>
-      </div>
-      </div>
-
+        </div>
 
         <div class="form-group">
           <label for="destinacao">Destinação *</label>
@@ -130,6 +127,7 @@
             <option value="Consumo próprio">Consumo próprio</option>
             <option value="Doação">Doação</option>
             <option value="Indústria">Indústria</option>
+            <option value="Indústria">Atravessador</option>
             <option value="Outro">Outro (Especifique)</option>
           </select>
           <div id="outroDestinacaoContainer" class="hidden">
@@ -146,8 +144,8 @@
           <label for="artePesca">Arte de Pesca *</label>
           <select id="artePesca" name="artePesca" required onchange="toggleOutroArtePesca()">
             <option value="">Selecione uma opção</option>
-            <option value="Rede emalhar de fundo">Rede emalhar de fundo</option>
-            <option value="Rede emalhar de meia água">Rede emalhar de meia água</option>
+            <option value="Mergulho">Mergulho</option>
+            <option value="Tarrafa">Tarrafa</option>
             <option value="Rede emalhar de superfície">Rede emalhar de superfície</option>
             <option value="Rede de arrasto">Rede de arrasto</option>
             <option value="Linha com anzol e isca">Linha com anzol e isca</option>
