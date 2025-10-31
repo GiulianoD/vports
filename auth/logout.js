@@ -1,15 +1,84 @@
 const pagLogin = '../../auth/';
 
+// Elementos do modal
+let logoutModal, modalCancel, modalConfirm;
+let logoutCallback = null;
+
+// Inicializar elementos do modal quando o DOM carregar
+document.addEventListener('DOMContentLoaded', function() {
+    initModal();
+    checkToken();
+});
+
+function initModal() {
+    logoutModal = document.getElementById('logoutModal');
+    modalCancel = document.getElementById('modalCancel');
+    modalConfirm = document.getElementById('modalConfirm');
+    
+    if (modalCancel) {
+        modalCancel.addEventListener('click', closeModal);
+    }
+    
+    if (modalConfirm) {
+        modalConfirm.addEventListener('click', function() {
+            if (logoutCallback) {
+                logoutCallback();
+            }
+            closeModal();
+        });
+    }
+    
+    // Fechar modal ao clicar fora
+    if (logoutModal) {
+        logoutModal.addEventListener('click', function(e) {
+            if (e.target === logoutModal) {
+                closeModal();
+            }
+        });
+    }
+    
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && logoutModal && logoutModal.style.display === 'flex') {
+            closeModal();
+        }
+    });
+}
+
+function showModal() {
+    if (logoutModal) {
+        logoutModal.style.display = 'flex';
+        // Focar no botão cancelar por padrão (mais seguro)
+        if (modalCancel) {
+            modalCancel.focus();
+        }
+    }
+}
+
+function closeModal() {
+    if (logoutModal) {
+        logoutModal.style.display = 'none';
+    }
+    logoutCallback = null;
+}
+
 function obterAccessToken() {
     const accessToken = localStorage.getItem('accessToken');
     return accessToken;
 }
 
-// FUNÇÃO LOGOUT
+// FUNÇÃO LOGOUT COM MODAL PERSONALIZADO
 function deleteTokenAndRedirect() {
-    if (!confirm('Tem certeza que deseja sair do sistema?')) {
-        return;
-    }
+    showModal();
+    
+    // Configurar o callback para quando confirmar
+    logoutCallback = function() {
+        performLogout();
+    };
+}
+
+// Função que executa o logout (separada da confirmação)
+function performLogout() {
     // Remover o accessToken e dados do usuário do localStorage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userData');
@@ -75,8 +144,5 @@ function checkToken() {
         window.location.href = pagLogin;
     }
 }
-
-// Verificar o token antes de carregar a página
-document.addEventListener('DOMContentLoaded', checkToken);
 // FIM CHECA JWT
 /**********************************************************/

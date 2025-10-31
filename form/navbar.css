@@ -283,3 +283,122 @@ body { padding-top: 96px; } /* antes: 70px */
     align-items: center;
   }
 }
+
+/* =========================================================
+   MODAL PERSONALIZADO
+========================================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: #0a3d62;
+}
+
+.modal-title {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.modal-message {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.modal-btn-cancel {
+    background: #f8f9fa;
+    color: #333;
+    border: 2px solid #dee2e6;
+}
+
+.modal-btn-cancel:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.modal-btn-confirm {
+    background: #0a3d62;
+    color: white;
+    border: 2px solid #0a3d62;
+}
+
+.modal-btn-confirm:hover {
+    background: #083354;
+    border-color: #083354;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade do modal */
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-btn {
+        width: 100%;
+    }
+}

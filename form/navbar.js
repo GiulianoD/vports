@@ -89,3 +89,20 @@ function initGlobalNav() {
     });
   }
 }
+
+// Adicionar listener para o botão de logout (se existir)
+const btnLogout = document.getElementById('btnLogout');
+if (btnLogout) {
+    btnLogout.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (typeof deleteTokenAndRedirect === 'function') {
+            deleteTokenAndRedirect();
+        } else {
+            console.error('Função deleteTokenAndRedirect não encontrada');
+            // Fallback: redirecionar manualmente
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userData');
+            window.location.href = '/auth/index.html';
+        }
+    });
+}
