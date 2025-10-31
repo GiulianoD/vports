@@ -10,12 +10,14 @@
   <div class="container">
     <header>
       <h1>Administração — Validação de Registros</h1>
-      <p>Revise e valide os envios de <b>Embarcações</b> e <b>Desembarques</b>.</p>
+      <p>Revise e valide os envios de <b>Embarcações</b> , <b>Desembarques</b> e <b> Pescadores </b> </p> 
     </header>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="emb">Embarcações</button>
-      <button class="tab-btn" data-tab="des">Desembarques</button>
+    <!-- Abas -->
+    <div class="tabs" role="tablist" aria-label="Listas para validação">
+      <button class="tab-btn active" data-tab="emb" role="tab" aria-selected="true">Embarcações</button>
+      <button class="tab-btn" data-tab="des" role="tab" aria-selected="false">Desembarques</button>
+      <button class="tab-btn" data-tab="pes" role="tab" aria-selected="false">Pescadores</button>
     </div>
 
     <div class="toolbar">
