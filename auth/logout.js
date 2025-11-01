@@ -8,6 +8,7 @@ let logoutCallback = null;
 document.addEventListener('DOMContentLoaded', function() {
     initModal();
     checkToken();
+    checkAdminRole(); // Nova verificação para páginas admin
 });
 
 function initModal() {
@@ -110,6 +111,22 @@ function isTokenValid(token) {
     }
 }
 
+// Função para obter dados do usuário do token
+function getUserDataFromToken(token) {
+    if (!token) return null;
+    
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return {
+            id: payload.id,
+            nome: payload.nome,
+            funcao: payload.funcao
+        };
+    } catch {
+        return null;
+    }
+}
+
 // Função para obter um cookie pelo nome
 function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -142,6 +159,33 @@ function checkToken() {
             deleteCookie('accessToken');
         }
         window.location.href = pagLogin;
+    }
+}
+
+// NOVA FUNÇÃO: Verificar se o usuário é Admin em páginas administrativas
+function checkAdminRole() {
+    // Só verifica se estamos em uma página admin
+    if (!window.location.pathname.includes('/admin/')) {
+        return;
+    }
+
+    const token = localStorage.getItem('accessToken') || getCookie('accessToken');
+    
+    if (!token || !isTokenValid(token)) {
+        return; // Já será tratado pelo checkToken()
+    }
+
+    const userData = getUserDataFromToken(token);
+    
+    if (!userData || userData.funcao !== 'Admin') {
+        // Usuário não é Admin - fazer logout automático
+        console.warn('❌ Acesso negado: usuário não é administrador');
+        
+        // Mostrar mensagem de erro antes de redirecionar
+        alert('Acesso restrito. Apenas administradores podem acessar esta página.');
+        
+        // Fazer logout
+        performLogout();
     }
 }
 // FIM CHECA JWT
