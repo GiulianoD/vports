@@ -1,8 +1,9 @@
-const API_BASE = 'http://localhost:3000/api';
-
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const messageDiv = document.getElementById('message');
+
+    // Usar as URLs do arquivo de configuração
+    const LOGIN_URL = window.URLS_CONFIG.AUTH_ENDPOINTS.LOGIN;
 
     // Verificar se já está logado
     checkExistingAuth();
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clearMessage();
 
         try {
-            const response = await fetch(`${API_BASE}/auth/login`, {
+            const response = await fetch(LOGIN_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

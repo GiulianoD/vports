@@ -7,11 +7,15 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Importar URLs do arquivo de configuração
+const { BASE_URL, ENDPOINTS, FULL_URLS, SERVER_CONFIG } = require('./js/urls.js');
+
 const app = express();
-const ip = 'localhost';
-const port = 3000;
-const url_base = `http://${ip}:${port}`
-const JWT_SECRET = 'sua_chave_secreta_jwt_aqui'; // Em produção, use variável de ambiente
+const JWT_SECRET = 'JRenvironlink';
+
+// Usar as configurações do servidor
+const { IP, PORT } = SERVER_CONFIG;
+// const { BASE_URL } = FULL_URLS;
 
 // Middleware
 app.use(cors());
@@ -130,7 +134,7 @@ async function createTableUsuarios() {
       console.log('🎉 Todos os usuários padrão foram criados com sucesso!');
       console.log('📋 Lista de usuários disponíveis:');
       console.log('   👑 Admin: admin / admin123');
-      console.log('   🏖️ Vila Velha: monitorvVV / senha123');
+      console.log('   🏖️ Vila Velha: monitorVV / senha123');
       console.log('   🌅 Vitória Leste: monitorVixL / senha123');
       console.log('   🌇 Vitória Oeste: monitorVixO / senha123');
     } else {
@@ -275,7 +279,7 @@ const upload = multer({
 // ROTAS DE AUTENTICAÇÃO
 
 // Rota de login
-app.post('/api/auth/login', async (req, res) => {
+app.post(ENDPOINTS.AUTH.LOGIN, async (req, res) => {
   let client;
   try {
     const { nome, senha } = req.body;
@@ -350,7 +354,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Rota para verificar token
-app.get('/api/auth/verify', authenticateToken, (req, res) => {
+app.get(ENDPOINTS.AUTH.VERIFY, authenticateToken, (req, res) => {
   res.json({
     success: true,
     user: req.user
@@ -358,7 +362,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
 });
 
 // Rota para criar usuário (apenas admin)
-app.post('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req, res) => {
+app.post(ENDPOINTS.USUARIOS.BASE, authenticateToken, requireRole(['Admin']), async (req, res) => {
   let client;
   try {
     const { nome, senha, funcao } = req.body;
@@ -424,7 +428,7 @@ app.post('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req,
 });
 
 // Rota para listar usuários (apenas admin)
-app.get('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req, res) => {
+app.get(ENDPOINTS.USUARIOS.BASE, authenticateToken, requireRole(['Admin']), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -452,8 +456,7 @@ app.get('/api/usuarios', authenticateToken, requireRole(['Admin']), async (req, 
 // ROTAS EXISTENTES (protegidas com autenticação)
 
 // Rota para salvar os dados do formulário
-app.post('/api/embarcacoes', authenticateToken, upload.array('anexos', 10), async (req, res) => {
-  // ... código existente mantido igual ...
+app.post(ENDPOINTS.EMBARCACOES.BASE, authenticateToken, upload.array('anexos', 10), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -536,8 +539,7 @@ app.post('/api/embarcacoes', authenticateToken, upload.array('anexos', 10), asyn
 });
 
 // Rota para listar todas as embarcações
-app.get('/api/embarcacoes', authenticateToken, async (req, res) => {
-  // ... código existente mantido igual ...
+app.get(ENDPOINTS.EMBARCACOES.BASE, authenticateToken, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -561,7 +563,7 @@ app.get('/api/embarcacoes', authenticateToken, async (req, res) => {
 });
 
 // Rota para buscar embarcação por ID
-app.get('/api/embarcacoes/:id', async (req, res) => {
+app.get(ENDPOINTS.EMBARCACOES.BY_ID, async (req, res) => {
   let client;
   try {
     const { id } = req.params;
@@ -593,7 +595,7 @@ app.get('/api/embarcacoes/:id', async (req, res) => {
 });
 
 // Rota para atualizar status da embarcação
-app.patch('/api/embarcacoes/:id/status', async (req, res) => {
+app.patch(ENDPOINTS.EMBARCACOES.STATUS, async (req, res) => {
   let client;
   try {
     const { id } = req.params;
@@ -637,7 +639,7 @@ app.patch('/api/embarcacoes/:id/status', async (req, res) => {
 });
 
 // Adicione esta rota específica para o formulário de desembarque, se necessário
-app.get('/api/embarcacoes-ativas', async (req, res) => {
+app.get(ENDPOINTS.EMBARCACOES.ATIVAS, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -670,7 +672,7 @@ app.get('/api/embarcacoes-ativas', async (req, res) => {
 });
 
 // Rota para salvar os dados do formulário de desembarque
-app.post('/api/desembarques', upload.array('imagens', 10), async (req, res) => {
+app.post(ENDPOINTS.DESEMBARQUES.BASE, upload.array('imagens', 10), async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -779,7 +781,7 @@ app.post('/api/desembarques', upload.array('imagens', 10), async (req, res) => {
 });
 
 // Rota para listar desembarques
-app.get('/api/desembarques', async (req, res) => {
+app.get(ENDPOINTS.DESEMBARQUES.BASE, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -822,7 +824,7 @@ app.get('/api/desembarques', async (req, res) => {
 });
 
 // Rota para buscar desembarque por ID
-app.get('/api/desembarques/:id', async (req, res) => {
+app.get(ENDPOINTS.DESEMBARQUES.BY_ID, async (req, res) => {
   let client;
   try {
     const { id } = req.params;
@@ -883,7 +885,7 @@ app.get('/api/desembarques/:id', async (req, res) => {
 });
 
 // Rota para atualizar status do desembarque
-app.patch('/api/desembarques/:id/status', async (req, res) => {
+app.patch(ENDPOINTS.DESEMBARQUES.STATUS, async (req, res) => {
   let client;
   try {
     const { id } = req.params;
@@ -927,7 +929,7 @@ app.patch('/api/desembarques/:id/status', async (req, res) => {
 });
 
 // Rota de health check para verificar conexão com o banco
-app.get('/api/health', async (req, res) => {
+app.get(ENDPOINTS.SYSTEM.HEALTH, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -953,7 +955,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Rota para informações do banco
-app.get('/api/database-info', authenticateToken, async (req, res) => {
+app.get(ENDPOINTS.SYSTEM.DATABASE_INFO, authenticateToken, async (req, res) => {
   let client;
   try {
     client = await pool.connect();
@@ -998,18 +1000,18 @@ async function startServer() {
     await createTableEmbarcacoes();
     await createTableDesembarques();
     
-    app.listen(port, () => {
-      console.log(`✅ Servidor rodando na porta ${port}`);
+    app.listen(PORT, IP, () => {
+      console.log(`✅ Servidor rodando em: ${BASE_URL}`);
       console.log(`📊 Banco de dados: vports`);
       console.log(`🔐 Sistema de autenticação: Ativo`);
       console.log(`👤 Usuário admin padrão: admin / admin123`);
-      console.log(`🔍 Health check: ${url_base}/api/health`);
-      console.log(`📋 Info do banco: ${url_base}/api/database-info`);
-      console.log(`🔑 Login: ${url_base}/auth/index.html`);
-      console.log(`⛵ Formulário embarcação: ${url_base}/form/embarcacao`);
-      console.log(`🎣 Formulário desembarque: ${url_base}/form/desembarque`);
-      console.log(`🎣 Formulário pescadores: ${url_base}/form/pescadores`);
-      console.log(`👨‍💼 Admin: ${url_base}/admin.html`);
+      console.log(`🔍 Health check: ${FULL_URLS.SYSTEM.HEALTH}`);
+      console.log(`📋 Info do banco: ${FULL_URLS.SYSTEM.DATABASE_INFO}`);
+      console.log(`🔑 Login: ${BASE_URL}/auth/index.html`);
+      console.log(`⛵ Formulário embarcação: ${BASE_URL}/form/embarcacao`);
+      console.log(`🎣 Formulário desembarque: ${BASE_URL}/form/desembarque`);
+      console.log(`🎣 Formulário pescadores: ${BASE_URL}/form/pescadores`);
+      console.log(`👨‍💼 Admin: ${BASE_URL}/admin.html`);
     });
   } catch (error) {
     console.error('❌ Erro fatal ao iniciar servidor:', error);
