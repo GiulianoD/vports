@@ -6,7 +6,7 @@
    - Upload + preview (imagens/outros)
    - Rascunho (localStorage)
    - Validação, incluindo associação (Sim/Não)
-   - Envio opcional ao backend + gravação no Admin (DB.addEmbarcacao)
+   - Envio usando URLs configuradas
    ========================================================= */
 
 // ====================== FORM EMBARCAÇÃO ======================
@@ -268,7 +268,7 @@
         return;
       }
 
-      // JSON “limpo” (sem binários) para Admin local
+      // JSON "limpo" (sem binários) para Admin local
       const fd = new FormData(form);
       const json = {};
       fd.forEach((v, k) => {
@@ -289,7 +289,7 @@
         }
       } catch { /* ignore */ }
 
-      // 2) (Opcional) envia ao backend real
+      // 2) Envia ao backend usando URL configurada
       try {
         const formData = new FormData(form);
         uploadedFiles.forEach(file => {
@@ -304,7 +304,13 @@
           }
         });
 
-        const resp = await fetch('http://localhost:3000/api/embarcacoes', {
+        // USANDO URL CONFIGURADA DO urls.js
+        const embarcacoesURL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || 
+                              'http://localhost:3000/api/embarcacoes';
+        
+        console.log('Enviando dados para:', embarcacoesURL);
+        
+        const resp = await fetch(embarcacoesURL, {
           method: 'POST',
           body: formData
         }).catch(() => null);

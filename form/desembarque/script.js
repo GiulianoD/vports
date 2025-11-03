@@ -46,7 +46,11 @@ async function carregarEmbarcacoes() {
 
   try {
     console.log('Carregando embarcações...');
-    const response = await fetch('/api/embarcacoes-ativas');
+    
+    // Usar as URLs do arquivo de configuração
+    const EMBARCACOES_ATIVAS_URL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.ATIVAS || '/api/embarcacoes-ativas';
+    
+    const response = await fetch(EMBARCACOES_ATIVAS_URL);
     if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
 
     const data = await response.json();
@@ -348,7 +352,10 @@ async function handleSubmit(event) {
 
     console.log('Enviando formulário com', uploadedImages.length, 'imagens');
 
-    const response = await fetch('/api/desembarques', {
+    // Usar as URLs do arquivo de configuração
+    const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/api/desembarques';
+
+    const response = await fetch(DESEMBARQUES_URL, {
       method: 'POST',
       body: formData,
     });

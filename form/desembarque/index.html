@@ -275,9 +275,10 @@
 
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
-        "script.js",
-        "../navbar.js",
-        "../../auth/logout.js"
+      "../js/urls.js",      // Configurações de URLs primeiro
+      "script.js",
+      "../navbar.js",
+      "../../auth/logout.js"
     ];
 
     scripts.forEach(script => {

@@ -19,8 +19,16 @@
   const btnApprove = document.getElementById("btnApprove");
   const btnReject = document.getElementById("btnReject");
 
-  const API_BASE = window.API_BASE || 'http://localhost:3000/api';
-  const FILES_BASE = window.FILES_BASE || '/uploads/';
+  // Usar as URLs do arquivo de configuração
+  const API_BASE = window.URLS_CONFIG?.BASE_URL || 'http://localhost:3000';
+  const FILES_BASE = '/uploads/';
+
+  // Endpoints das APIs
+  const ENDPOINTS = {
+    emb: window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/embarcacoes',
+    des: window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/desembarques',
+    pes: '/api/pescadores', // Mantido como está, já que não está no urls.js
+  };
 
   let currentTab = "emb"; // 'emb' | 'des' | 'pes'
   let currentList = [];
@@ -31,12 +39,6 @@
     emb: ["ID", "Status", "Data", "Nome", "RGP", "UF/Município", "Ações"],
     des: ["ID", "Status", "Data", "Embarcação", "Data Desembarque", "Local", "Ações"],
     pes: ["ID", "Status", "Data", "Nome", "UF/Município", "Local onde pesca", "Ações"],
-  };
-
-  const ENDPOINTS = {
-    emb: "embarcacoes",
-    des: "desembarques",
-    pes: "pescadores",
   };
 
   function showLoading() {
@@ -60,7 +62,7 @@
     showLoading();
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const res = await fetch(`${API_BASE}/${endpoint}`);
+      const res = await fetch(`${API_BASE}${endpoint}`);
       if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
       const result = await res.json();
       if (!result.success) throw new Error(result.message || 'Erro ao carregar dados');
@@ -181,12 +183,16 @@
         const id = btn.getAttribute("data-id");
         const type = btn.getAttribute("data-type"); // 'embarcacao' | 'desembarque' | 'pescador'
         try {
-          const endpoint = type === 'desembarque'
-            ? 'desembarques'
-            : type === 'pescador'
-            ? 'pescadores'
-            : 'embarcacoes';
-          const response = await fetch(`${API_BASE}/${endpoint}/${id}`);
+          let endpoint;
+          if (type === 'embarcacao') {
+            endpoint = ENDPOINTS.emb;
+          } else if (type === 'desembarque') {
+            endpoint = ENDPOINTS.des;
+          } else {
+            endpoint = ENDPOINTS.pes;
+          }
+          
+          const response = await fetch(`${API_BASE}${endpoint}/${id}`);
           const result = await response.json();
           if (result.success) {
             openDrawer(result.data, type);
@@ -297,7 +303,7 @@
     document.body.style.overflow = 'hidden';
   }
 
-  // Galeria de anexos/imagens (mesmo do seu arquivo, com base configurável)
+  // Galeria de anexos/imagens
   function renderAttachmentsGallery(anexos) {
     if (!anexos || !Array.isArray(anexos) || anexos.length === 0) return '<p>Nenhum arquivo disponível</p>';
     const images = anexos.filter(a => a.tipo && a.tipo.startsWith('image/'));
@@ -357,6 +363,7 @@
       <strong>Total: ${anexos.length}</strong> arquivo(s) anexado(s).</div>`;
     return galleryHTML;
   }
+
   function getFileIcon(mimeType) {
     if (!mimeType) return '📄';
     if (mimeType.startsWith('image/')) return '🖼️';
@@ -366,6 +373,7 @@
     if (mimeType.includes('zip') || mimeType.includes('compressed')) return '📦';
     return '📄';
   }
+
   function formatFileSize(bytes) {
     if (!bytes && bytes !== 0) return '';
     const sizes = ['Bytes','KB','MB','GB'];
@@ -373,6 +381,7 @@
     const i = parseInt(Math.floor(Math.log(bytes)/Math.log(1024)));
     return Math.round(bytes/Math.pow(1024,i)*100)/100 + ' ' + sizes[i];
   }
+
   function renderImagesGallery(imagens) {
     if (!imagens || !Array.isArray(imagens) || imagens.length === 0) return '<p>Nenhuma imagem disponível</p>';
     return `
@@ -400,6 +409,7 @@
         <strong>${imagens.length}</strong> imagem(ns) anexada(s).
       </div>`;
   }
+
   function renderSpeciesDetails(especies) {
     if (!especies || !Array.isArray(especies) || especies.length === 0) return '<p>Nenhuma espécie registrada</p>';
     const total = especies.reduce((sum, esp) => sum + (parseFloat(esp.quantidade) || 0), 0);
@@ -497,7 +507,6 @@
         try { processed.artes = JSON.parse(processed.artes); } catch {}
       }
       // Filiações (podem vir como flags + nomes)
-      // Apenas garante legibilidade se vierem como boolean + campo nome
       const filiacao = [];
       if (processed.filSindicato) filiacao.push(`Sindicato${processed.filSindicatoNome?`: ${processed.filSindicatoNome}`:''}`);
       if (processed.filAssociacao) filiacao.push(`Associação${processed.filAssociacaoNome?`: ${processed.filAssociacaoNome}`:''}`);
@@ -609,14 +618,18 @@
 
   async function updateStatus(status) {
     if (!selectedRecord) return;
-    const endpoint =
-      selectedRecord.coll === 'desembarque' ? 'desembarques' :
-      selectedRecord.coll === 'pescador' ? 'pescadores' :
-      'embarcacoes';
+    let endpoint;
+    if (selectedRecord.coll === 'embarcacao') {
+      endpoint = ENDPOINTS.emb;
+    } else if (selectedRecord.coll === 'desembarque') {
+      endpoint = ENDPOINTS.des;
+    } else {
+      endpoint = ENDPOINTS.pes;
+    }
 
     [btnApprove, btnReject].forEach(b=>b.disabled=true);
     try {
-      const response = await fetch(`${API_BASE}/${endpoint}/${selectedRecord.rec.id}/status`, {
+      const response = await fetch(`${API_BASE}${endpoint}/${selectedRecord.rec.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, review_note: reviewNote.value.trim() })
@@ -659,7 +672,7 @@
   exportJson.addEventListener("click", async () => {
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const response = await fetch(`${API_BASE}/${endpoint}`);
+      const response = await fetch(`${API_BASE}${endpoint}`);
       const result = await response.json();
       if (result.success) {
         const tipo = endpoint;
@@ -678,7 +691,7 @@
   exportCsv.addEventListener("click", async () => {
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const response = await fetch(`${API_BASE}/${endpoint}`);
+      const response = await fetch(`${API_BASE}${endpoint}`);
       const result = await response.json();
       if (result.success) {
         const data = result.data || [];
