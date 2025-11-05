@@ -15,25 +15,25 @@ function initGlobalNav() {
   
   // Determinar a base correta baseado na estrutura do projeto
   let routes = {
-    desembarque: '/form/desembarque/',
-    embarcacao: '/form/embarcacao/',
-    pescadores: '/form/pescadores/'
+    desembarque: '/vports/form/desembarque/',
+    embarcacao: '/vports/form/embarcacao/',
+    pescadores: '/vports/form/pescadores/'
   };
 
   // Se estamos em uma subpasta diferente, ajustar os caminhos
   if (currentPath.includes('/form/')) {
     // Já está na estrutura correta
     routes = {
-      desembarque: '/form/desembarque/',
-      embarcacao: '/form/embarcacao/', 
-      pescadores: '/form/pescadores/'
+      desembarque: '/vports/form/desembarque/',
+      embarcacao: '/vports/form/embarcacao/', 
+      pescadores: '/vports/form/pescadores/'
     };
   } else if (currentPath.includes('/admin/')) {
     // Se estamos na área admin, voltar para form
     routes = {
-      desembarque: '../form/desembarque/',
-      embarcacao: '../form/embarcacao/',
-      pescadores: '../form/pescadores/'
+      desembarque: '../vports/form/desembarque/',
+      embarcacao: '../vports/form/embarcacao/',
+      pescadores: '../vports/form/pescadores/'
     };
   }
 
@@ -84,7 +84,7 @@ function initGlobalNav() {
         // Fallback: redirecionar manualmente
         localStorage.removeItem('accessToken');
         localStorage.removeItem('userData');
-        window.location.href = '/auth/index.html';
+        window.location.href = '/vports/auth/index.html';
       }
     });
   }
@@ -102,7 +102,7 @@ if (btnLogout) {
             // Fallback: redirecionar manualmente
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userData');
-            window.location.href = '/auth/index.html';
+            window.location.href = '/vports/auth/index.html';
         }
     });
 }
