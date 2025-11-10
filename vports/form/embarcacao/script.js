@@ -5,7 +5,7 @@
    - UF -> Municípios (exemplos)
    - Upload + preview (imagens/outros)
    - Rascunho (localStorage)
-   - Validação, incluindo associação (Sim/Não)
+   - Nenhum campo obrigatório
    - Envio usando URLs configuradas
    ========================================================= */
 
@@ -148,7 +148,8 @@
       if (!associado || !associacaoContainer || !associacaoNome) return;
       if (associado.value === "Sim") {
         associacaoContainer.classList.remove("hidden");
-        associacaoNome.required = true;
+        // Não é mais obrigatório
+        associacaoNome.required = false;
       } else {
         associacaoContainer.classList.add("hidden");
         associacaoNome.required = false;
@@ -158,38 +159,9 @@
     window.toggleAssociacao = toggleAssociacao; // para onchange inline
     associado?.addEventListener("change", toggleAssociacao);
 
-    // ----- Validação -----
+    // ----- Validação REMOVIDA - nenhum campo é obrigatório -----
     function validarCampos() {
-      const nome = document.getElementById("nomeEmbarcacao")?.value.trim();
-      if (!nome) return "Informe o Nome da Embarcação.";
-
-      const rgpVal = rgp?.value.trim();
-      if (!rgpVal || !/^\d{6}-?\d$/.test(rgpVal)) return "Informe um RGP válido (ex: 123456-7).";
-
-      if (tipoCasco?.value === "Outro") {
-        const outro = document.getElementById("outroTipoCasco")?.value.trim();
-        if (!outro) return "Especifique o Tipo de Casco (Outro).";
-      }
-
-      if (tipoPropulsao?.value === "Outro") {
-        const outro = document.getElementById("outroTipoPropulsao")?.value.trim();
-        if (!outro) return "Especifique o Tipo de Propulsão (Outro).";
-      }
-
-      const ab = Number(document.getElementById("arqueacaoBruta")?.value);
-      if (Number.isNaN(ab) || ab < 0) return "Arqueação Bruta deve ser um número válido (≥ 0).";
-
-      if (!uf?.value) return "Selecione a UF.";
-      if (!municipio?.value) return "Selecione o Município.";
-
-      if (associado) {
-        if (!associado.value) return "Informe se está cadastrado em alguma associação (Sim/Não).";
-        if (associado.value === "Sim") {
-          const a = associacaoNome?.value.trim();
-          if (!a) return "Informe o Nome da Associação.";
-        }
-      }
-
+      // Não há validação, todos os campos são opcionais
       return null;
     }
 
@@ -262,36 +234,13 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const erro = validarCampos();
-      if (erro) {
-        alert(erro);
-        return;
-      }
+      // Não há validação de campos obrigatórios
+      // O formulário pode ser enviado vazio se o usuário quiser
 
-      // JSON "limpo" (sem binários) para Admin local
-      const fd = new FormData(form);
-      const json = {};
-      fd.forEach((v, k) => {
-        if (k === "anexos") return;
-        if (json[k]) {
-          if (!Array.isArray(json[k])) json[k] = [json[k]];
-          json[k].push(v);
-        } else {
-          json[k] = v;
-        }
-      });
-      json.anexosNomes = uploadedFiles.map(f => f.name);
-
-      // 1) Grava no Admin local (se disponível)
-      try {
-        if (typeof DB?.addEmbarcacao === "function") {
-          DB.addEmbarcacao(json);
-        }
-      } catch { /* ignore */ }
-
-      // 2) Envia ao backend usando URL configurada
       try {
         const formData = new FormData(form);
+        
+        // Adicionar arquivos uploadados ao FormData
         uploadedFiles.forEach(file => {
           if (file.data && file.data.startsWith('data:')) {
             const byteString = atob(file.data.split(',')[1]);
@@ -306,39 +255,47 @@
 
         // USANDO URL CONFIGURADA DO urls.js
         const embarcacoesURL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || 
-                              'http://localhost:3000/api/embarcacoes';
+                              'http://localhost:2002/embarcacoes';
         
         console.log('Enviando dados para:', embarcacoesURL);
         
+        // O cookie accessToken será enviado automaticamente pelo navegador
         const resp = await fetch(embarcacoesURL, {
           method: 'POST',
+          credentials: 'include', // Importante: inclui cookies na requisição
           body: formData
-        }).catch(() => null);
+        });
 
-        if (resp && resp.ok) {
-          const result = await resp.json().catch(() => ({}));
-          if (!result?.success) {
-            console.warn("Backend respondeu sem success=true. Registro já foi salvo localmente no Admin.");
+        if (resp.ok) {
+          const result = await resp.json();
+          if (result.success) {
+            alert("Embarcação cadastrada com sucesso!");
+            
+            // Limpar formulário após sucesso
+            localStorage.removeItem(DRAFT_KEY);
+            form.reset();
+            municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+            uploadedFiles = [];
+            updateFilePreview();
+            outroTipoCascoContainer?.classList.add("hidden");
+            outroTipoPropulsaoContainer?.classList.add("hidden");
+            toggleAssociacao();
+          } else {
+            alert("Erro ao cadastrar: " + (result.error || "Erro desconhecido"));
           }
         } else {
-          console.warn("Backend indisponível. Registro já foi salvo localmente no Admin.");
+          if (resp.status === 401) {
+            alert("Sessão expirada. Faça login novamente.");
+            // Redirecionar para login
+            window.location.href = '/login.html';
+          } else {
+            alert("Erro no servidor: " + resp.statusText);
+          }
         }
       } catch (error) {
-        console.warn("Falha no envio ao backend:", error);
+        console.error("Falha no envio:", error);
+        alert("Erro de conexão. Verifique sua internet e tente novamente.");
       }
-
-      console.log("Payload salvo no Admin (sem anexos):", json);
-      alert("Embarcação cadastrada com sucesso!");
-
-      // Limpa rascunho e UI
-      localStorage.removeItem(DRAFT_KEY);
-      form.reset();
-      municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-      uploadedFiles = [];
-      updateFilePreview();
-      outroTipoCascoContainer?.classList.add("hidden");
-      outroTipoPropulsaoContainer?.classList.add("hidden");
-      toggleAssociacao();
     });
 
     // Init

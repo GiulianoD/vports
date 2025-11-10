@@ -79,24 +79,24 @@
         <h2>Dados Básicos</h2>
 
         <div class="form-group">
-          <label for="nomeEmbarcacao">Nome da Embarcação *</label>
-          <input type="text" id="nomeEmbarcacao" name="nomeEmbarcacao" required placeholder="Ex: Nossa Senhora do Mar">
+          <label for="nomeEmbarcacao">Nome da Embarcação</label>
+          <input type="text" id="nomeEmbarcacao" name="nomeEmbarcacao" placeholder="Ex: Nossa Senhora do Mar">
         </div>
 
         <div class="form-group">
-          <label for="rgp">Número de Inscrição *</label>
-          <input type="text" id="rgp" name="rgp" required placeholder="Ex: 123456-7">
+          <label for="rgp">Número de Inscrição</label>
+          <input type="text" id="rgp" name="rgp" placeholder="Ex: 123456-7">
         </div>
 
         <div class="form-group">
-          <label for="numTripulantes">Número de Tripulantes *</label>
-          <input type="number" id="numTripulantes" name="numTripulantes" required placeholder="Ex: 12" min="0" step="1">
+          <label for="numTripulantes">Número de Tripulantes</label>
+          <input type="number" id="numTripulantes" name="numTripulantes" placeholder="Ex: 12" min="0" step="1">
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="tipoCasco">Tipo de Casco *</label>
-            <select id="tipoCasco" name="tipoCasco" required>
+            <label for="tipoCasco">Tipo de Casco</label>
+            <select id="tipoCasco" name="tipoCasco">
               <option value="">Selecione</option>
               <option>Madeira</option>
               <option>Fibra</option>
@@ -111,14 +111,14 @@
 
           <div class="form-group">
             <label for="arqueacaoBruta">Arqueação Bruta (Tonelada)</label>
-            <input type="number" id="arqueacaoBruta" name="arqueacaoBruta" min="0" step="0.01" required placeholder="Ex: 12.5">
+            <input type="number" id="arqueacaoBruta" name="arqueacaoBruta" min="0" step="0.01" placeholder="Ex: 12.5">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="tipoPropulsao">Tipo de Propulsão *</label>
-            <select id="tipoPropulsao" name="tipoPropulsao" required>
+            <label for="tipoPropulsao">Tipo de Propulsão</label>
+            <select id="tipoPropulsao" name="tipoPropulsao">
               <option value="">Selecione</option>
               <option>Motor Polpa</option>
               <option>Motor de Centro</option>
@@ -133,8 +133,8 @@
           </div>
 
           <div class="form-group">
-            <label for="portoBase">Porto Base *</label>
-            <input type="text" id="portoBase" name="portoBase" required placeholder="Ex: Porto de Vitória">
+            <label for="portoBase">Porto Base</label>
+            <input type="text" id="portoBase" name="portoBase" placeholder="Ex: Porto de Vitória">
           </div>
         </div>
       </div>
@@ -145,8 +145,8 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="uf">Estado de Inscrição (UF) *</label>
-            <select id="uf" name="uf" required>
+            <label for="uf">Estado de Inscrição (UF)</label>
+            <select id="uf" name="uf">
               <option value="">Selecione</option>
               <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
               <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
@@ -159,8 +159,8 @@
           </div>
 
           <div class="form-group">
-            <label for="municipio">Município *</label>
-            <select id="municipio" name="municipio" required>
+            <label for="municipio">Município</label>
+            <select id="municipio" name="municipio">
               <option value="">Selecione a UF primeiro</option>
             </select>
           </div>
@@ -172,8 +172,8 @@
         <h2>Responsável</h2>
 
         <div class="form-group">
-          <label for="responsavel">Responsável pela Embarcação *</label>
-          <input type="text" id="responsavel" name="responsavel" required placeholder="Nome completo">
+          <label for="responsavel">Responsável pela Embarcação</label>
+          <input type="text" id="responsavel" name="responsavel" placeholder="Nome completo">
         </div>
         <div class="form-group">
           <label for="registroResponsavel">Número do Registro</label>
@@ -181,8 +181,8 @@
         </div>
 
         <div class="form-group">
-          <label for="associado">Cadastrado em alguma associação? *</label>
-          <select id="associado" name="associado" required onchange="toggleAssociacao()">
+          <label for="associado">Cadastrado em alguma associação?</label>
+          <select id="associado" name="associado" onchange="toggleAssociacao()">
             <option value="">Selecione</option>
             <option value="Não">Não</option>
             <option value="Sim">Sim</option>
@@ -190,7 +190,7 @@
         </div>
 
         <div class="form-group hidden" id="associacaoContainer">
-          <label for="associacaoNome">Nome da Associação *</label>
+          <label for="associacaoNome">Nome da Associação</label>
           <input type="text" id="associacaoNome" name="associacaoNome" placeholder="Ex: Colônia de Pescadores Z-1">
         </div>
 

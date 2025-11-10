@@ -5,11 +5,12 @@
 
 const SERVER_CONFIG = {
   IP: 'localhost',
-  PORT: 3000
+  PORT: 2002
 };
 
 const BASE_URL = `http://${SERVER_CONFIG.IP}:${SERVER_CONFIG.PORT}`;
-const API_PREFIX = '/api';
+// const API_PREFIX = '/api';
+const API_PREFIX = '';
 const AUTH_PREFIX = `${API_PREFIX}/auth`;
 const EMBARCACOES_PREFIX = `${API_PREFIX}/embarcacoes`;
 const DESEMBARQUES_PREFIX = `${API_PREFIX}/desembarques`;
