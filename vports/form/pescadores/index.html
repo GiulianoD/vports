@@ -11,6 +11,7 @@
   
   <!-- ======== CSS ======== -->
   <link rel="stylesheet" href="style.css?v=1.1">
+  <link rel="stylesheet" href="../navbar.css?v=1.1">
 </head>
 <body>
       <!-- NAV: Menu responsivo -->
@@ -18,7 +19,7 @@
     <div class="nav-inner">
         <!-- Logo esquerda -->
         <div class="nav-logo-left">
-        <img src="/res/evl/logo.200.png"
+        <img src="/vports/res/evl/logo.200.png"
             alt="Logo EVL" class="logo-left">
         </div>
 
@@ -31,14 +32,37 @@
 
         <!-- Links centrais -->
         <ul id="navLinks" class="nav-links">
-        <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
-        <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
-        <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+          <li><a id="linkDesembarque" class="nav-link" href="#">Desembarque pesqueiro</a></li>
+          <li><a id="linkEmbarcacao" class="nav-link" href="#">Cadastro de embarcações</a></li>
+          <li><a id="linkPescadores" class="nav-link" href="#">Cadastro de pescadores</a></li>
+
+          <!-- Botão de Logout -->
+          <li class="logout-item">
+            <button id="btnLogout" class="btn-logout" title="Sair do sistema">
+              <span class="logout-text">Sair</span>
+            </button>
+          </li>
         </ul>
+        <!-- Modal de Confirmação de Logout -->
+        <div id="logoutModal" class="modal-overlay">
+          <div class="modal-content">
+              <div class="modal-icon">🚪</div>
+              <h3 class="modal-title">Sair do Sistema</h3>
+              <p class="modal-message">Tem certeza que deseja sair do sistema?</p>
+              <div class="modal-buttons">
+                  <button type="button" class="modal-btn modal-btn-cancel" id="modalCancel">
+                      Cancelar
+                  </button>
+                  <button type="button" class="modal-btn modal-btn-confirm" id="modalConfirm">
+                      Sim, Sair
+                  </button>
+              </div>
+          </div>
+        </div>
 
         <!-- Logo direita -->
         <div class="nav-logo-right">
-        <img src="/res/vports/Marca_Vports-05%204.png"
+        <img src="/vports/res/vports/Marca_Vports-05%204.png"
             alt="Logo VPorts" class="logo-right">
         </div>
     </div>
@@ -224,7 +248,8 @@
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
         "script.js",
-        "../auth/logout.js"
+        "../navbar.js",
+        "../../auth/logout.js"
     ];
 
     scripts.forEach(script => {

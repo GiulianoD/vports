@@ -6,63 +6,12 @@
    - Upload + preview (imagens/outros)
    - Rascunho (localStorage)
    - Validação, incluindo associação (Sim/Não)
-   - Envio opcional ao backend + gravação no Admin (DB.addEmbarcacao)
+   - Envio usando URLs configuradas
    ========================================================= */
-
-// ====================== NAV GLOBAL ======================
-function initGlobalNav(){
-  const linksEl = document.getElementById('navLinks');
-  const toggleEl = document.getElementById('navToggle');
-  if (!linksEl) return; // página sem nav
-
-  // Calcula raiz do projeto: .../<secao>/index.html -> remove 2 últimas partes
-  const parts = location.pathname.split('/').filter(Boolean);
-  const rootParts = parts.length >= 2 ? parts.slice(0, parts.length - 2) : [];
-  const root = '/' + rootParts.join('/');
-
-  const routes = {
-    desembarque: root + '/desembarque/index.html',
-    embarcacao: root + '/embarcacao/index.html',
-    pescadores: root + '/pescadores/index.html',
-  };
-
-  const l1 = document.getElementById('linkDesembarque');
-  const l2 = document.getElementById('linkEmbarcacao');
-  const l3 = document.getElementById('linkPescadores');
-
-  if (l1) l1.href = routes.desembarque;
-  if (l2) l2.href = routes.embarcacao;
-  if (l3) l3.href = routes.pescadores;
-
-  const path = location.pathname;
-  if (l1 && path.includes('/desembarque/')) l1.classList.add('active');
-  if (l2 && path.includes('/embarcacao/')) l2.classList.add('active');
-  if (l3 && path.includes('/pescadores/')) l3.classList.add('active');
-
-  // Toggle mobile
-  toggleEl?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    linksEl.classList.toggle('open');
-    toggleEl.setAttribute('aria-expanded', linksEl.classList.contains('open') ? 'true' : 'false');
-  });
-
-  // Impede fechar ao clicar dentro do menu
-  linksEl?.addEventListener('click', (e) => e.stopPropagation());
-
-  // Fecha ao clicar fora
-  document.addEventListener('click', (e) => {
-    if (!linksEl.contains(e.target) && !toggleEl.contains(e.target)) {
-      linksEl.classList.remove('open');
-      toggleEl?.setAttribute('aria-expanded', 'false');
-    }
-  });
-}
 
 // ====================== FORM EMBARCAÇÃO ======================
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
-    // Inicializa NAV em todas as páginas
-    initGlobalNav();
 
     const form = document.getElementById("embarcacaoForm");
     if (!form) return;
@@ -319,7 +268,7 @@ function initGlobalNav(){
         return;
       }
 
-      // JSON “limpo” (sem binários) para Admin local
+      // JSON "limpo" (sem binários) para Admin local
       const fd = new FormData(form);
       const json = {};
       fd.forEach((v, k) => {
@@ -340,7 +289,7 @@ function initGlobalNav(){
         }
       } catch { /* ignore */ }
 
-      // 2) (Opcional) envia ao backend real
+      // 2) Envia ao backend usando URL configurada
       try {
         const formData = new FormData(form);
         uploadedFiles.forEach(file => {
@@ -355,7 +304,13 @@ function initGlobalNav(){
           }
         });
 
-        const resp = await fetch('http://localhost:3000/api/embarcacoes', {
+        // USANDO URL CONFIGURADA DO urls.js
+        const embarcacoesURL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || 
+                              'http://localhost:3000/api/embarcacoes';
+        
+        console.log('Enviando dados para:', embarcacoesURL);
+        
+        const resp = await fetch(embarcacoesURL, {
           method: 'POST',
           body: formData
         }).catch(() => null);

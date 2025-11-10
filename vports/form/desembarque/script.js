@@ -35,9 +35,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Mapa (Leaflet)
     initFishingMap();
   }
-
-  // Nav deve iniciar em TODAS as páginas
-  initGlobalNav();
 });
 
 // =======================================
@@ -49,7 +46,11 @@ async function carregarEmbarcacoes() {
 
   try {
     console.log('Carregando embarcações...');
-    const response = await fetch('/api/embarcacoes-ativas');
+    
+    // Usar as URLs do arquivo de configuração
+    const EMBARCACOES_ATIVAS_URL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.ATIVAS || '/api/embarcacoes-ativas';
+    
+    const response = await fetch(EMBARCACOES_ATIVAS_URL);
     if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
 
     const data = await response.json();
@@ -351,7 +352,10 @@ async function handleSubmit(event) {
 
     console.log('Enviando formulário com', uploadedImages.length, 'imagens');
 
-    const response = await fetch('/api/desembarques', {
+    // Usar as URLs do arquivo de configuração
+    const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/api/desembarques';
+
+    const response = await fetch(DESEMBARQUES_URL, {
       method: 'POST',
       body: formData,
     });
@@ -424,60 +428,6 @@ function validarFormulario() {
   // if (!lat || !lng) { alert('Marque o local da pesca no mapa.'); return false; }
 
   return true;
-}
-
-// =======================================
-// NAV global (todas as páginas)
-// =======================================
-function initGlobalNav() {
-  const linksEl = document.getElementById('navLinks');
-  const toggleEl = document.getElementById('navToggle');
-  if (!linksEl) return; // página sem nav
-
-  // Calcula raiz do projeto: .../<secao>/index.html -> remove 2 últimas partes
-  const parts = location.pathname.split('/').filter(Boolean);
-  const rootParts = parts.length >= 2 ? parts.slice(0, parts.length - 2) : [];
-  const root = '/' + rootParts.join('/');
-
-  const routes = {
-    desembarque: root + '/desembarque/index.html',
-    embarcacao: root + '/embarcacao/index.html', // singular
-    pescadores: root + '/pescadores/index.html',
-  };
-
-  const l1 = document.getElementById('linkDesembarque');
-  const l2 = document.getElementById('linkEmbarcacao');
-  const l3 = document.getElementById('linkPescadores');
-
-  if (l1) l1.href = routes.desembarque;
-  if (l2) l2.href = routes.embarcacao;
-  if (l3) l3.href = routes.pescadores;
-
-  // Marcar ativo
-  const path = location.pathname;
-  if (l1 && path.includes('/desembarque/')) l1.classList.add('active');
-  if (l2 && path.includes('/embarcacao/')) l2.classList.add('active');
-  if (l3 && path.includes('/pescadores/')) l3.classList.add('active');
-
-  // Toggle mobile
-  toggleEl?.addEventListener('click', function (e) {
-    e.stopPropagation();
-    linksEl.classList.toggle('open');
-    toggleEl.setAttribute('aria-expanded', linksEl.classList.contains('open') ? 'true' : 'false');
-  });
-
-  // Fecha ao clicar fora
-  document.addEventListener('click', function (e) {
-    if (!linksEl.contains(e.target) && !toggleEl.contains(e.target)) {
-      linksEl.classList.remove('open');
-      toggleEl?.setAttribute('aria-expanded', 'false');
-    }
-  });
-
-  // Não fecha ao clicar dentro
-  linksEl.addEventListener('click', function (e) {
-    e.stopPropagation();
-  });
 }
 
 // =======================================
