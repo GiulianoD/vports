@@ -165,6 +165,28 @@
       return null;
     }
 
+    // ----- Função para obter informações do usuário logado -----
+    function obterInformacoesUsuario() {
+      try {
+        const token = obterAccessToken();
+        if (!token) {
+          console.warn('⚠️ Token não encontrado');
+          return null;
+        }
+
+        // Decodificar o token JWT para obter informações do usuário
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return {
+          id: payload.id,
+          nome: payload.nome,
+          funcao: payload.funcao
+        };
+      } catch (error) {
+        console.error('❌ Erro ao obter informações do usuário:', error);
+        return null;
+      }
+    }
+
     // ----- Rascunho -----
     const DRAFT_KEY = "draft_embarcacao_v1";
 
@@ -235,6 +257,16 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // Verificar se o usuário está autenticado
+      const usuario = obterInformacoesUsuario();
+      if (!usuario) {
+        alert("❌ Você precisa estar logado para cadastrar uma embarcação!");
+        window.location.href = '/login.html';
+        return;
+      }
+
+      console.log(`👤 Usuário logado: ${usuario.nome} (ID: ${usuario.id})`);
+
       // Não há validação de campos obrigatórios
       // O formulário pode ser enviado vazio se o usuário quiser
 
@@ -264,9 +296,13 @@
         data: file.data // Incluir a Data URL da imagem/arquivo
       }));
 
+      // O campo 'adicionado_por' será automaticamente preenchido pela API
+      // através do token JWT no header de autorização
+
       // IMPRIMIR JSON NO CONSOLE
       console.log('📦 JSON enviado na requisição:');
       console.log(JSON.stringify(jsonData, null, 2));
+      console.log('👤 Usuário que está cadastrando:', usuario);
       console.log('--- Dados brutos:', jsonData);
 
       try {
@@ -275,12 +311,11 @@
                               'http://localhost:2002/embarcacoes';
 
         console.log('🌐 Enviando dados para:', embarcacoesURL);
-        console.log(obterAccessToken());
+        console.log('🔐 Token de acesso:', obterAccessToken() ? 'Presente' : 'Ausente');
 
         // Enviar como JSON em vez de FormData
         const response = await fetch(embarcacoesURL, {
           method: 'POST',
-          credentials: 'include', // Importante: inclui cookies na requisição
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${obterAccessToken()}`
@@ -291,7 +326,8 @@
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
-            alert("Embarcação cadastrada com sucesso!");
+            alert("✅ Embarcação cadastrada com sucesso!");
+            console.log(`📝 Embarcação ID ${result.embarcacao_id} cadastrada pelo usuário ID ${result.adicionado_por}`);
 
             // Limpar formulário após sucesso
             localStorage.removeItem(DRAFT_KEY);
@@ -303,25 +339,42 @@
             outroTipoPropulsaoContainer?.classList.add("hidden");
             toggleAssociacao();
           } else {
-            alert("Erro ao cadastrar: " + (result.error || "Erro desconhecido"));
+            alert("❌ Erro ao cadastrar: " + (result.error || "Erro desconhecido"));
           }
         } else {
           if (response.status === 401) {
-            alert("Sessão expirada. Faça login novamente.");
+            alert("🔐 Sessão expirada. Faça login novamente.");
             // Redirecionar para login
             window.location.href = '/login.html';
           } else {
             const errorText = await response.text();
-            alert("Erro no servidor: " + errorText);
+            console.error('❌ Erro do servidor:', errorText);
+            alert("❌ Erro no servidor: " + errorText);
           }
         }
       } catch (error) {
-        console.error("Falha no envio:", error);
-        alert("Erro de conexão. Verifique sua internet e tente novamente.");
+        console.error("❌ Falha no envio:", error);
+        alert("❌ Erro de conexão. Verifique sua internet e tente novamente.");
       }
     });
 
+    // Verificar autenticação ao carregar a página
+    function verificarAutenticacao() {
+      const token = obterAccessToken();
+      if (!token) {
+        alert("🔐 Você precisa fazer login para acessar esta página!");
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const usuario = obterInformacoesUsuario();
+      if (usuario) {
+        console.log(`✅ Usuário autenticado: ${usuario.nome} (${usuario.funcao})`);
+      }
+    }
+
     // Init
+    verificarAutenticacao();
     restaurarRascunho();
   });
 })();
