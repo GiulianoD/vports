@@ -43,7 +43,8 @@ async function carregarEmbarcacoes() {
     console.log('Carregando embarcações...');
     
     // Usar as URLs do arquivo de configuração
-    const EMBARCACOES_ATIVAS_URL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.ATIVAS || '/api/embarcacoes-ativas';
+    const EMBARCACOES_ATIVAS_URL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || '/api/embarcacoes-ativas';
+    console.log(EMBARCACOES_ATIVAS_URL)
     
     const response = await fetch(EMBARCACOES_ATIVAS_URL);
     if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
@@ -51,7 +52,7 @@ async function carregarEmbarcacoes() {
     const data = await response.json();
 
     if (data.success) {
-      embarcacoesList = data.data || [];
+      embarcacoesList = data.embarcacoes || [];
       console.log(`✅ ${embarcacoesList.length} embarcações carregadas`);
       preencherSelectEmbarcacoes();
     } else {
@@ -106,11 +107,14 @@ function preencherEmbarcacoesFallback(mensagemErro) {
   errorOption.selected = true;
   selectEmbarcacao.appendChild(errorOption);
 
-  const opcoesEstaticas = [{ id: 'fallback-1', nome: 'N/A', rgp: '000' }];
+  const opcoesEstaticas = [
+    { id: 'fallback-1', nome_embarcacao: 'N/A', rgp: '000' }
+  ];
+  
   opcoesEstaticas.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
-    option.textContent = `${embarcacao.nome} (${embarcacao.rgp})`;
+    option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
     selectEmbarcacao.appendChild(option);
   });
 }
