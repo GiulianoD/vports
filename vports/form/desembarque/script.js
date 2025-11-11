@@ -1,7 +1,6 @@
 // =======================================
 // Estado global
 // =======================================
-let uploadedImages = [];       // imagens selecionadas
 let embarcacoesList = [];      // lista de embarcações (API)
 
 // =======================================
@@ -18,10 +17,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const fimEl = document.getElementById('dataFimPesca');
     if (inicioEl) inicioEl.addEventListener('change', calcularEsforco);
     if (fimEl) fimEl.addEventListener('change', calcularEsforco);
-
-    // Preview de imagens
-    const imagensEl = document.getElementById('imagens');
-    if (imagensEl) imagensEl.addEventListener('change', handleImageUpload);
 
     // Envio do formulário
     form.addEventListener('submit', handleSubmit);
@@ -137,8 +132,6 @@ function initForm() {
       selectLocal.appendChild(option);
     });
   }
-
-  updateImagePreview();
 }
 
 // =======================================
@@ -219,77 +212,6 @@ function calcularEsforco() {
 }
 
 // =======================================
-// Upload de imagens (preview)
-// =======================================
-function handleImageUpload(event) {
-  const files = event.target.files || [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    if (!file.type.match('image.*')) {
-      alert('Por favor, selecione apenas arquivos de imagem.');
-      continue;
-    }
-
-    const isDuplicate = uploadedImages.some((img) => img.name === file.name && img.size === file.size);
-    if (isDuplicate) continue;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      uploadedImages.push({
-        id: Date.now() + i,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        data: e.target.result,
-      });
-      updateImagePreview();
-    };
-    reader.readAsDataURL(file);
-  }
-  event.target.value = '';
-}
-
-function dataURLtoBlob(dataURL) {
-  const arr = dataURL.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) u8arr[n] = bstr.charCodeAt(n);
-  return new Blob([u8arr], { type: mime });
-}
-
-function updateImagePreview() {
-  const previewContainer = document.getElementById('previewContainer');
-  if (!previewContainer) return;
-
-  previewContainer.innerHTML = '';
-
-  if (uploadedImages.length === 0) {
-    previewContainer.innerHTML = '<div class="no-images">Nenhuma imagem selecionada</div>';
-    return;
-  }
-
-  uploadedImages.forEach((image) => {
-    const previewItem = document.createElement('div');
-    previewItem.className = 'preview-item';
-    previewItem.dataset.id = image.id;
-
-    previewItem.innerHTML = `
-      <img src="${image.data}" alt="${image.name}" class="preview-image">
-      <div class="preview-info">${image.name}</div>
-      <button type="button" class="btn-delete-image" onclick="deleteImage(${image.id})" title="Remover imagem">×</button>
-    `;
-    previewContainer.appendChild(previewItem);
-  });
-}
-
-function deleteImage(imageId) {
-  uploadedImages = uploadedImages.filter((img) => img.id !== imageId);
-  updateImagePreview();
-}
-
-// =======================================
 // Limpar & Enviar formulário
 // =======================================
 function clearForm() {
@@ -300,10 +222,6 @@ function clearForm() {
     form.reset();
     document.getElementById('outroDestinacaoContainer')?.classList.add('hidden');
     document.getElementById('outroArtePescaContainer')?.classList.add('hidden');
-
-    // Limpar imagens
-    uploadedImages = [];
-    updateImagePreview();
 
     // Manter apenas uma linha na tabela
     const tbody = document.getElementById('especiesTable')?.getElementsByTagName('tbody')[0];
@@ -331,8 +249,6 @@ async function handleSubmit(event) {
   event.preventDefault();
   const form = event.target;
 
-  if (!validarFormulario()) return;
-
   const submitBtn = form.querySelector('.btn-submit');
   const originalText = submitBtn ? submitBtn.textContent : null;
 
@@ -344,13 +260,7 @@ async function handleSubmit(event) {
 
     const formData = new FormData(form);
 
-    // Anexa imagens convertidas
-    uploadedImages.forEach((image) => {
-      const blob = dataURLtoBlob(image.data);
-      formData.append('imagens', blob, image.name);
-    });
-
-    console.log('Enviando formulário com', uploadedImages.length, 'imagens');
+    console.log('Enviando formulário de desembarque');
 
     // Usar as URLs do arquivo de configuração
     const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/api/desembarques';
@@ -362,7 +272,7 @@ async function handleSubmit(event) {
 
     const result = await response.json();
     if (result.success) {
-      alert('Desembarque registrado com sucesso!');
+      alert('✅ Desembarque registrado com sucesso!');
       console.log('Dados salvos:', result.data);
       clearForm();
     } else {
@@ -370,64 +280,13 @@ async function handleSubmit(event) {
     }
   } catch (error) {
     console.error('❌ Erro ao enviar formulário:', error);
-    alert('Erro ao enviar formulário: ' + error.message);
+    alert('❌ Erro ao enviar formulário: ' + error.message);
   } finally {
     if (submitBtn) {
       submitBtn.textContent = originalText || 'Enviar Registro';
       submitBtn.disabled = false;
     }
   }
-}
-
-function validarFormulario() {
-  // pelo menos uma espécie com nome e quantidade
-  const especies = document.getElementsByName('especie[]');
-  const quantidades = document.getElementsByName('quantidade[]');
-
-  let especiesValidas = false;
-  for (let i = 0; i < especies.length; i++) {
-    if (especies[i].value.trim() !== '' && quantidades[i].value.trim() !== '') {
-      especiesValidas = true;
-      break;
-    }
-  }
-  if (!especiesValidas) {
-    alert('Por favor, adicione pelo menos uma espécie com nome e quantidade.');
-    return false;
-  }
-
-  // "Outro" especificado
-  const destinacao = document.getElementById('destinacao')?.value;
-  const outroDestinacao = document.getElementById('outroDestinacao')?.value || '';
-  if (destinacao === 'Outro' && outroDestinacao.trim() === '') {
-    alert('Por favor, especifique a destinação.');
-    return false;
-  }
-
-  const artePesca = document.getElementById('artePesca')?.value;
-  const outroArtePesca = document.getElementById('outroArtePesca')?.value || '';
-  if (artePesca === 'Outro' && outroArtePesca.trim() === '') {
-    alert('Por favor, especifique a arte de pesca.');
-    return false;
-  }
-
-  // Se marcar despesas, exige valor válido
-  const has = document.getElementById('hasDespesas');
-  const val = document.getElementById('totalDespesas');
-  if (has?.checked) {
-    const num = Number(val?.value);
-    if (!Number.isFinite(num) || num < 0) {
-      alert('Informe um valor válido para Total de Despesas.');
-      return false;
-    }
-  }
-
-  // Se usar mapa, opcional: exigir ponto marcado
-  // const lat = document.getElementById('latPesca')?.value;
-  // const lng = document.getElementById('lngPesca')?.value;
-  // if (!lat || !lng) { alert('Marque o local da pesca no mapa.'); return false; }
-
-  return true;
 }
 
 // =======================================

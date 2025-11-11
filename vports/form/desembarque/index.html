@@ -94,15 +94,15 @@
         <h2>Dados Básicos</h2>
 
         <div class="form-group">
-          <label for="embarcacao">Embarcação *</label>
-          <select id="embarcacao" name="embarcacao" required>
+          <label for="embarcacao">Embarcação</label>
+          <select id="embarcacao" name="embarcacao">
             <option value="">Carregando embarcações...</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="localDesembarque">Local do Desembarque *</label>
-          <select id="localDesembarque" name="localDesembarque" required>
+          <label for="localDesembarque">Local do Desembarque</label>
+          <select id="localDesembarque" name="localDesembarque">
             <option value="">Selecione um Ponto</option>
           </select>
         </div>
@@ -151,14 +151,14 @@
         </div>
 
         <div class="form-group">
-          <label for="destinacao">Destinação *</label>
-          <select id="destinacao" name="destinacao" required onchange="toggleOutroDestinacao()">
+          <label for="destinacao">Destinação</label>
+          <select id="destinacao" name="destinacao" onchange="toggleOutroDestinacao()">
             <option value="">Selecione uma opção</option>
             <option value="Venda local">Venda local</option>
             <option value="Consumo próprio">Consumo próprio</option>
             <option value="Doação">Doação</option>
             <option value="Indústria">Indústria</option>
-            <option value="Indústria">Atravessador</option>
+            <option value="Atravessador">Atravessador</option>
             <option value="Outro">Outro (Especifique)</option>
           </select>
           <div id="outroDestinacaoContainer" class="hidden">
@@ -172,8 +172,8 @@
         <h2>Informações da Pesca</h2>
 
         <div class="form-group">
-          <label for="artePesca">Arte de Pesca *</label>
-          <select id="artePesca" name="artePesca" required onchange="toggleOutroArtePesca()">
+          <label for="artePesca">Arte de Pesca</label>
+          <select id="artePesca" name="artePesca" onchange="toggleOutroArtePesca()">
             <option value="">Selecione uma opção</option>
             <option value="Mergulho">Mergulho</option>
             <option value="Tarrafa">Tarrafa</option>
@@ -190,23 +190,23 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="dataSaida">Data de Saída *</label>
-            <input type="datetime-local" id="dataSaida" name="dataSaida" required>
+            <label for="dataSaida">Data de Saída</label>
+            <input type="datetime-local" id="dataSaida" name="dataSaida">
           </div>
           <div class="form-group">
-            <label for="dataRetorno">Data de Retorno *</label>
-            <input type="datetime-local" id="dataRetorno" name="dataRetorno" required>
+            <label for="dataRetorno">Data de Retorno</label>
+            <input type="datetime-local" id="dataRetorno" name="dataRetorno">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="dataInicioPesca">Data de Início da Pesca *</label>
-            <input type="datetime-local" id="dataInicioPesca" name="dataInicioPesca" required>
+            <label for="dataInicioPesca">Data de Início da Pesca</label>
+            <input type="datetime-local" id="dataInicioPesca" name="dataInicioPesca">
           </div>
           <div class="form-group">
-            <label for="dataFimPesca">Data de Fim da Pesca *</label>
-            <input type="datetime-local" id="dataFimPesca" name="dataFimPesca" required>
+            <label for="dataFimPesca">Data de Fim da Pesca</label>
+            <input type="datetime-local" id="dataFimPesca" name="dataFimPesca">
           </div>
         </div>
 
@@ -236,25 +236,13 @@
         </div>
       </div>
 
-      <!-- ========= DOCUMENTAÇÃO ========= -->
+      <!-- ========= OBSERVAÇÕES ========= -->
       <div class="form-section">
-        <h2>Documentação</h2>
-
-        <div class="form-group">
-          <label for="imagens">Imagens</label>
-          <div class="file-upload-container">
-            <input type="file" id="imagens" name="imagens" multiple accept="image/*" class="file-input">
-            <label for="imagens" class="file-label">
-              <span class="file-icon">📁</span>
-              <span class="file-text">Selecionar imagens</span>
-            </label>
-          </div>
-          <div id="previewContainer" class="preview-container"></div>
-        </div>
+        <h2>Observações</h2>
 
         <div class="form-group">
           <label for="observacoes">Observações</label>
-          <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações adicionais"></textarea>
+          <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações adicionais sobre o desembarque"></textarea>
         </div>
       </div>
 
@@ -275,7 +263,7 @@
 
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
-      "../js/urls.js",      // Configurações de URLs primeiro
+      "../../js/urls.js",      // Configurações de URLs primeiro
       "script.js",
       "../navbar.js",
       "../../auth/logout.js"
