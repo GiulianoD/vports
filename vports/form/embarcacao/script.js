@@ -237,9 +237,39 @@
       // Não há validação de campos obrigatórios
       // O formulário pode ser enviado vazio se o usuário quiser
 
+      // Criar JSON com os dados do formulário para exibir no console
+      const formData = new FormData(form);
+      const jsonData = {};
+      
+      // Converter FormData para objeto JSON
+      for (const [key, value] of formData.entries()) {
+        if (key === 'anexos') continue; // Pular arquivos anexos no JSON de console
+        if (jsonData[key]) {
+          // Se a chave já existe, transformar em array
+          if (!Array.isArray(jsonData[key])) {
+            jsonData[key] = [jsonData[key]];
+          }
+          jsonData[key].push(value);
+        } else {
+          jsonData[key] = value;
+        }
+      }
+
+      // Adicionar informações dos arquivos (apenas metadados)
+      jsonData.anexosInfo = uploadedFiles.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type
+      }));
+
+      // IMPRIMIR JSON NO CONSOLE
+      console.log('📦 JSON enviado na requisição:');
+      console.log(JSON.stringify(jsonData, null, 2));
+      console.log('--- Dados brutos:', jsonData);
+
       try {
-        const formData = new FormData(form);
-        
+        const formDataToSend = new FormData(form);
+
         // Adicionar arquivos uploadados ao FormData
         uploadedFiles.forEach(file => {
           if (file.data && file.data.startsWith('data:')) {
@@ -249,28 +279,28 @@
             const ia = new Uint8Array(ab);
             for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
             const blob = new Blob([ab], { type: mimeString });
-            formData.append('anexos', blob, file.name);
+            formDataToSend.append('anexos', blob, file.name);
           }
         });
 
         // USANDO URL CONFIGURADA DO urls.js
         const embarcacoesURL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || 
                               'http://localhost:2002/embarcacoes';
-        
-        console.log('Enviando dados para:', embarcacoesURL);
-        
+
+        console.log('🌐 Enviando dados para:', embarcacoesURL);
+
         // O cookie accessToken será enviado automaticamente pelo navegador
         const resp = await fetch(embarcacoesURL, {
           method: 'POST',
           credentials: 'include', // Importante: inclui cookies na requisição
-          body: formData
+          body: formDataToSend
         });
 
         if (resp.ok) {
           const result = await resp.json();
           if (result.success) {
             alert("Embarcação cadastrada com sucesso!");
-            
+
             // Limpar formulário após sucesso
             localStorage.removeItem(DRAFT_KEY);
             form.reset();
