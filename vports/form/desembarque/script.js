@@ -264,14 +264,91 @@ async function handleSubmit(event) {
 
     const formData = new FormData(form);
 
-    console.log('Enviando formulário de desembarque');
+    // Converter FormData para objeto JSON (mesmo padrão do embarcacao.js)
+    const jsonData = {};
+    
+    // Processar campos do formulário
+    for (const [key, value] of formData.entries()) {
+      if (jsonData[key]) {
+        // Se a chave já existe, transformar em array
+        if (!Array.isArray(jsonData[key])) {
+          jsonData[key] = [jsonData[key]];
+        }
+        jsonData[key].push(value);
+      } else {
+        jsonData[key] = value;
+      }
+    }
+
+    // Estruturar as espécies em um array de objetos (organizar melhor os dados)
+    const especies = [];
+    if (jsonData['especie[]'] && jsonData['quantidade[]'] && jsonData['valorKg[]']) {
+      const especiesArray = Array.isArray(jsonData['especie[]']) ? jsonData['especie[]'] : [jsonData['especie[]']];
+      const quantidadesArray = Array.isArray(jsonData['quantidade[]']) ? jsonData['quantidade[]'] : [jsonData['quantidade[]']];
+      const valoresArray = Array.isArray(jsonData['valorKg[]']) ? jsonData['valorKg[]'] : [jsonData['valorKg[]']];
+      
+      for (let i = 0; i < especiesArray.length; i++) {
+        if (especiesArray[i] && quantidadesArray[i] && valoresArray[i]) {
+          especies.push({
+            especie: especiesArray[i],
+            quantidade: quantidadesArray[i],
+            valor_kg: valoresArray[i]
+          });
+        }
+      }
+      
+      // Adicionar array estruturado ao JSON
+      jsonData.especies = especies;
+      
+      // Remover arrays antigos
+      delete jsonData['especie[]'];
+      delete jsonData['quantidade[]'];
+      delete jsonData['valorKg[]'];
+    }
+
+    // Processar campos condicionais
+    if (jsonData.destinacao !== 'Outro') {
+      jsonData.outroDestinacao = '';
+    }
+    if (jsonData.artePesca !== 'Outro') {
+      jsonData.outroArtePesca = '';
+    }
+
+    // Processar despesas
+    if (!jsonData.hasDespesas || jsonData.hasDespesas === 'off') {
+      jsonData.totalDespesas = '';
+    }
+
+    // Obter informações do usuário logado (mesmo padrão do embarcacao.js)
+    const usuario = obterInformacoesUsuario();
+    if (!usuario) {
+      alert("❌ Você precisa estar logado para registrar um desembarque!");
+      window.location.href = '/login.html';
+      return;
+    }
+
+    console.log(`👤 Usuário logado: ${usuario.nome} (ID: ${usuario.id})`);
+
+    // IMPRIMIR JSON NO CONSOLE (mesmo padrão do embarcacao.js)
+    console.log('📦 JSON enviado na requisição POST /desembarques:');
+    console.log(JSON.stringify(jsonData, null, 2));
+    console.log('👤 Usuário que está registrando:', usuario);
+    console.log('--- Dados brutos:', jsonData);
 
     // Usar as URLs do arquivo de configuração
     const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/api/desembarques';
 
+    console.log('🌐 Enviando dados para:', DESEMBARQUES_URL);
+    console.log('🔐 Token de acesso:', obterAccessToken() ? 'Presente' : 'Ausente');
+
+    // Enviar como JSON em vez de FormData (mesmo padrão do embarcacao.js)
     const response = await fetch(DESEMBARQUES_URL, {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${obterAccessToken()}`
+      },
+      body: JSON.stringify(jsonData)
     });
 
     const result = await response.json();
@@ -280,7 +357,12 @@ async function handleSubmit(event) {
       console.log('Dados salvos:', result.data);
       clearForm();
     } else {
-      throw new Error(result.message || 'Erro ao salvar desembarque');
+      if (response.status === 401) {
+        alert("🔐 Sessão expirada. Faça login novamente.");
+        window.location.href = '/login.html';
+      } else {
+        throw new Error(result.message || 'Erro ao salvar desembarque');
+      }
     }
   } catch (error) {
     console.error('❌ Erro ao enviar formulário:', error);

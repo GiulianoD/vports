@@ -189,3 +189,25 @@ function checkAdminRole() {
 }
 // FIM CHECA JWT
 /**********************************************************/
+
+// Função para obter informações do usuário logado
+function obterInformacoesUsuario() {
+  try {
+    const token = obterAccessToken();
+    if (!token) {
+      console.warn('⚠️ Token não encontrado');
+      return null;
+    }
+
+    // Decodificar o token JWT para obter informações do usuário
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return {
+      id: payload.id,
+      nome: payload.nome,
+      funcao: payload.funcao
+    };
+  } catch (error) {
+    console.error('❌ Erro ao obter informações do usuário:', error);
+    return null;
+  }
+}
