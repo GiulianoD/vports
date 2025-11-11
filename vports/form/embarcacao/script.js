@@ -184,7 +184,8 @@
         id: file.id,
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        data: file.data // Salvar Data URL no rascunho também
       }));
       localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
       alert("Rascunho salvo!");
@@ -255,11 +256,12 @@
         }
       }
 
-      // Adicionar informações dos arquivos (apenas metadados)
+      // Adicionar informações dos arquivos COM AS IMAGENS EM DATA URL
       jsonData.anexosInfo = uploadedFiles.map(file => ({
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        data: file.data // Incluir a Data URL da imagem/arquivo
       }));
 
       // IMPRIMIR JSON NO CONSOLE
@@ -268,36 +270,24 @@
       console.log('--- Dados brutos:', jsonData);
 
       try {
-        const formDataToSend = new FormData(form);
-
-        // Adicionar arquivos uploadados ao FormData
-        uploadedFiles.forEach(file => {
-          if (file.data && file.data.startsWith('data:')) {
-            const byteString = atob(file.data.split(',')[1]);
-            const mimeString = file.data.split(',')[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-            const blob = new Blob([ab], { type: mimeString });
-            formDataToSend.append('anexos', blob, file.name);
-          }
-        });
-
         // USANDO URL CONFIGURADA DO urls.js
         const embarcacoesURL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || 
                               'http://localhost:2002/embarcacoes';
 
         console.log('🌐 Enviando dados para:', embarcacoesURL);
 
-        // O cookie accessToken será enviado automaticamente pelo navegador
-        const resp = await fetch(embarcacoesURL, {
+        // Enviar como JSON em vez de FormData
+        const response = await fetch(embarcacoesURL, {
           method: 'POST',
           credentials: 'include', // Importante: inclui cookies na requisição
-          body: formDataToSend
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(jsonData)
         });
 
-        if (resp.ok) {
-          const result = await resp.json();
+        if (response.ok) {
+          const result = await response.json();
           if (result.success) {
             alert("Embarcação cadastrada com sucesso!");
 
@@ -314,12 +304,13 @@
             alert("Erro ao cadastrar: " + (result.error || "Erro desconhecido"));
           }
         } else {
-          if (resp.status === 401) {
+          if (response.status === 401) {
             alert("Sessão expirada. Faça login novamente.");
             // Redirecionar para login
             window.location.href = '/login.html';
           } else {
-            alert("Erro no servidor: " + resp.statusText);
+            const errorText = await response.text();
+            alert("Erro no servidor: " + errorText);
           }
         }
       } catch (error) {
