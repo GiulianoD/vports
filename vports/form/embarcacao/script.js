@@ -282,6 +282,7 @@
           credentials: 'include', // Importante: inclui cookies na requisição
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${obterAccessToken()}`
           },
           body: JSON.stringify(jsonData)
         });

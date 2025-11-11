@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const messageDiv = document.getElementById('message');
 
-    // URL da API Flask - ajuste a porta se necessário
-    const LOGIN_URL = 'https://oceanstream-8b3329b99e40.herokuapp.com/vports/login';
-    const HEALTH_URL = 'https://oceanstream-8b3329b99e40.herokuapp.com/vports/health';
+    // Usar URLs do arquivo de configuração
+    const LOGIN_URL = window.URLS_CONFIG?.AUTH_ENDPOINTS?.LOGIN || 'https://oceanstream-8b3329b99e40.herokuapp.com/vports/login';
+    const HEALTH_URL = window.URLS_CONFIG?.SYSTEM?.HEALTH || 'https://oceanstream-8b3329b99e40.herokuapp.com/vports/health';
 
     // Verificar se a API está online
     checkAPIHealth();
@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success) {
                 // Salvar token no localStorage
-                localStorage.setItem('accessToken', data.token);
+                localStorage.setItem(accessToken, data.token);
                 // Salvar dados do usuário também
                 localStorage.setItem('userData', JSON.stringify(data.user));
                 
                 // Salvar token nos cookies também (para compatibilidade)
-                document.cookie = `accessToken=${data.token}; path=/; max-age=86400`; // 24 horas
+                document.cookie = `${accessToken}=${data.token}; path=/; max-age=86400`; // 24 horas
                 
                 showMessage('Login realizado com sucesso! Redirecionando...', 'success');
                 
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkExistingAuth() {
-        const token = localStorage.getItem('accessToken') || getCookie('accessToken');
+        const token = localStorage.getItem(accessToken) || getCookie(accessToken);
         const userData = localStorage.getItem('userData');
         
         if (token && isTokenValid(token) && userData) {

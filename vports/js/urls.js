@@ -3,15 +3,18 @@
  * Compatível com Node.js e Browser
  */
 
+const accessToken = 'accessTokenVports'
+
 const SERVER_CONFIG = {
   IP: 'localhost',
   PORT: 2002
 };
 
-const BASE_URL = `http://${SERVER_CONFIG.IP}:${SERVER_CONFIG.PORT}`;
+// const BASE_URL = `http://${SERVER_CONFIG.IP}:${SERVER_CONFIG.PORT}`;
+const BASE_URL = 'https://oceanstream-8b3329b99e40.herokuapp.com/vports'; // heroku
 // const API_PREFIX = '/api';
 const API_PREFIX = '';
-const AUTH_PREFIX = `${API_PREFIX}/auth`;
+const AUTH_PREFIX = `${API_PREFIX}`;
 const EMBARCACOES_PREFIX = `${API_PREFIX}/embarcacoes`;
 const DESEMBARQUES_PREFIX = `${API_PREFIX}/desembarques`;
 const USUARIOS_PREFIX = `${API_PREFIX}/usuarios`;

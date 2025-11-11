@@ -64,7 +64,7 @@ function closeModal() {
 }
 
 function obterAccessToken() {
-    const accessToken = localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem(accessToken);
     return accessToken;
 }
 
@@ -81,7 +81,7 @@ function deleteTokenAndRedirect() {
 // Função que executa o logout (separada da confirmação)
 function performLogout() {
     // Remover o accessToken e dados do usuário do localStorage
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem(accessToken);
     localStorage.removeItem('userData');
     
     // Função para remover um cookie pelo nome
@@ -90,7 +90,7 @@ function performLogout() {
     }
 
     // Remover o accessToken dos cookies
-    deleteCookie('accessToken');
+    deleteCookie(accessToken);
 
     // Redirecionar para a página de login
     window.location.href = pagLogin;
@@ -141,8 +141,8 @@ function deleteCookie(name) {
 
 // Função para verificar a existência e validade do JWT no localStorage e cookies
 function checkToken() {
-    let localStorageToken = localStorage.getItem('accessToken');
-    let cookieToken = getCookie('accessToken');
+    let localStorageToken = localStorage.getItem(accessToken);
+    let cookieToken = getCookie(accessToken);
     const userData = localStorage.getItem('userData');
 
     // Verifica se existe pelo menos um token válido
@@ -152,11 +152,11 @@ function checkToken() {
     } else {
         // Caso nenhum token válido seja encontrado, remove e redireciona para a página de login
         if (localStorageToken) {
-            localStorage.removeItem('accessToken');
+            localStorage.removeItem(accessToken);
             localStorage.removeItem('userData');
         }
         if (cookieToken) {
-            deleteCookie('accessToken');
+            deleteCookie(accessToken);
         }
         window.location.href = pagLogin;
     }
@@ -169,7 +169,7 @@ function checkAdminRole() {
         return;
     }
 
-    const token = localStorage.getItem('accessToken') || getCookie('accessToken');
+    const token = localStorage.getItem(accessToken) || getCookie(accessToken);
     
     if (!token || !isTokenValid(token)) {
         return; // Já será tratado pelo checkToken()
