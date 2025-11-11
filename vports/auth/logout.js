@@ -64,8 +64,8 @@ function closeModal() {
 }
 
 function obterAccessToken() {
-    const accessToken = localStorage.getItem(accessToken);
-    return accessToken;
+    const jwt = localStorage.getItem(accessToken);
+    return jwt;
 }
 
 // FUNÇÃO LOGOUT COM MODAL PERSONALIZADO

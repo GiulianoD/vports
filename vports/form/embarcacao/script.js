@@ -275,6 +275,7 @@
                               'http://localhost:2002/embarcacoes';
 
         console.log('🌐 Enviando dados para:', embarcacoesURL);
+        console.log(obterAccessToken());
 
         // Enviar como JSON em vez de FormData
         const response = await fetch(embarcacoesURL, {
