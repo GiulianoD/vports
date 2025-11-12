@@ -20,14 +20,14 @@
   const btnReject = document.getElementById("btnReject");
 
   // Usar as URLs do arquivo de configuração
-  const API_BASE = window.URLS_CONFIG?.BASE_URL || 'http://localhost:3000';
+  const API_BASE = window.URLS_CONFIG?.BASE_URL || 'http://localhost:2002';
   const FILES_BASE = '/uploads/';
 
-  // Endpoints das APIs
+  // Endpoints das APIs - CORRIGIDOS para usar os endpoints corretos
   const ENDPOINTS = {
-    emb: window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/embarcacoes',
-    des: window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/desembarques',
-    pes: '/pescadores', // Mantido como está, já que não está no urls.js
+    emb: window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || '/embarcacoes',
+    des: window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/desembarques',
+    pes: window.URLS_CONFIG?.PESCADORES_ENDPOINTS?.BASE || '/pescadores'
   };
 
   let currentTab = "emb"; // 'emb' | 'des' | 'pes'
@@ -46,28 +46,50 @@
     errorEl.classList.add('hidden');
     rowsEl.innerHTML = '';
   }
-  function hideLoading() { loadingEl.style.display = 'none'; }
+  
+  function hideLoading() { 
+    loadingEl.style.display = 'none'; 
+  }
+  
   function showError(message) {
     errorEl.textContent = message;
     errorEl.classList.remove('hidden');
     hideLoading();
   }
+  
   function setHeaders() {
     headRow.innerHTML = HEADERS[currentTab].map(h => `<th>${h}</th>`).join("");
   }
 
-  function debounce(fn, ms=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+  function debounce(fn, ms=250){ 
+    let t; 
+    return (...a)=>{ 
+      clearTimeout(t); 
+      t=setTimeout(()=>fn(...a), ms); 
+    }; 
+  }
 
   async function fetchData() {
     showLoading();
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const res = await fetch(`${API_BASE}${endpoint}`);
+      console.log(`📡 Buscando dados de: ${endpoint}`);
+      
+      const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
+      
       const result = await res.json();
-      if (!result.success) throw new Error(result.message || 'Erro ao carregar dados');
+      console.log(`📦 Dados recebidos para ${currentTab}:`, result);
 
-      let all = result.data || [];
+      // CORREÇÃO: A estrutura da resposta pode variar
+      let all = result.data || result.embarcacoes || result.desembarques || result.pescadores || result || [];
+      
+      // Se for um objeto com propriedades, converter para array
+      if (!Array.isArray(all)) {
+        all = Object.values(all);
+      }
+
+      console.log(`📊 Total de registros: ${all.length}`);
 
       // filtro por status
       let filtered = statusFilter.value
@@ -114,6 +136,7 @@
       hideLoading();
       return filtered;
     } catch (error) {
+      console.error('❌ Erro ao carregar dados:', error);
       showError(`Erro ao carregar dados: ${error.message}`);
       currentList = [];
       return [];
@@ -129,13 +152,26 @@
 
   async function render() {
     setHeaders();
-    await fetchData();
+    const data = await fetchData();
+    
+    console.log(`🎨 Renderizando ${data.length} registros para ${currentTab}`);
 
-    rowsEl.innerHTML = currentList.map((r) => {
+    if (data.length === 0) {
+      rowsEl.innerHTML = `
+        <tr>
+          <td colspan="${HEADERS[currentTab].length}" style="text-align: center; padding: 20px; color: #6c757d;">
+            Nenhum registro encontrado
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    rowsEl.innerHTML = data.map((r) => {
       if (currentTab === "emb") {
         return `
           <tr>
-            <td>${r.id}</td>
+            <td>${r.id || 'N/A'}</td>
             <td>${statusBadge(r.status)}</td>
             <td>${formatDateTime(r.created_at)}</td>
             <td>${r.nome_embarcacao || ""}</td>
@@ -150,7 +186,7 @@
         const embarcacaoRgp = r.rgp || (r.embarcacoes ? r.embarcacoes.rgp : '') || 'N/A';
         return `
           <tr>
-            <td>${r.id}</td>
+            <td>${r.id || 'N/A'}</td>
             <td>${statusBadge(r.status)}</td>
             <td>${formatDateTime(r.created_at)}</td>
             <td>${embarcacaoNome} (${embarcacaoRgp})</td>
@@ -164,7 +200,7 @@
         // pescadores
         return `
           <tr>
-            <td>${r.id}</td>
+            <td>${r.id || 'N/A'}</td>
             <td>${statusBadge(r.status)}</td>
             <td>${formatDateTime(r.created_at)}</td>
             <td>${r.nomeCompleto || r.nome || ""}</td>
@@ -182,6 +218,9 @@
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-id");
         const type = btn.getAttribute("data-type"); // 'embarcacao' | 'desembarque' | 'pescador'
+        
+        console.log(`👀 Abrindo detalhes: ${type} ID ${id}`);
+        
         try {
           let endpoint;
           if (type === 'embarcacao') {
@@ -192,19 +231,25 @@
             endpoint = ENDPOINTS.pes;
           }
           
-          const response = await fetch(`${API_BASE}${endpoint}/${id}`);
+          const response = await fetch(`${endpoint}/${id}`);
           const result = await response.json();
+          
+          console.log(`📋 Detalhes recebidos:`, result);
+          
           if (result.success) {
             openDrawer(result.data, type);
           } else {
-            alert('Erro ao carregar detalhes: ' + result.message);
+            alert('Erro ao carregar detalhes: ' + (result.message || 'Erro desconhecido'));
           }
         } catch (error) {
+          console.error('❌ Erro ao carregar detalhes:', error);
           alert('Erro ao carregar detalhes: ' + error.message);
         }
       });
     });
   }
+
+  // ... (o restante das funções permanece igual: openDrawer, renderAttachmentsGallery, etc.)
 
   function openDrawer(rec, coll) {
     selectedRecord = { rec, coll }; // coll: 'embarcacao' | 'desembarque' | 'pescador'
@@ -302,6 +347,8 @@
     document.getElementById('drawerOverlay').style.display = 'block';
     document.body.style.overflow = 'hidden';
   }
+
+  // ... (as funções auxiliares restantes permanecem iguais: renderAttachmentsGallery, getFileIcon, formatFileSize, etc.)
 
   // Galeria de anexos/imagens
   function renderAttachmentsGallery(anexos) {
@@ -594,6 +641,7 @@
       return `${d}/${m}/${y}, ${hh}:${mm}`;
     } catch { return dateString; }
   }
+  
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
     try {
@@ -613,6 +661,7 @@
     reviewNote.value = "";
     document.body.style.overflow = '';
   }
+  
   document.getElementById('drawerOverlay').addEventListener('click', close);
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && drawer.classList.contains('open')) close(); });
 
@@ -629,7 +678,7 @@
 
     [btnApprove, btnReject].forEach(b=>b.disabled=true);
     try {
-      const response = await fetch(`${API_BASE}${endpoint}/${selectedRecord.rec.id}/status`, {
+      const response = await fetch(`${endpoint}/${selectedRecord.rec.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, review_note: reviewNote.value.trim() })
@@ -672,16 +721,24 @@
   exportJson.addEventListener("click", async () => {
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const response = await fetch(`${API_BASE}${endpoint}`);
+      const response = await fetch(endpoint);
       const result = await response.json();
-      if (result.success) {
-        const tipo = endpoint;
-        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json;charset=utf-8" });
+      
+      // CORREÇÃO: Extrair dados da resposta
+      const data = result.data || result.embarcacoes || result.desembarques || result.pescadores || result || [];
+      
+      if (data.length > 0) {
+        const tipo = currentTab;
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement("a"), {
-          href: url, download: `${tipo}-export-${Date.now()}.json`,
+          href: url, 
+          download: `${tipo}-export-${Date.now()}.json`,
         });
-        a.click(); URL.revokeObjectURL(url);
+        a.click(); 
+        URL.revokeObjectURL(url);
+      } else {
+        alert('Nenhum dado para exportar');
       }
     } catch (error) {
       alert('Erro ao exportar: ' + error.message);
@@ -691,40 +748,46 @@
   exportCsv.addEventListener("click", async () => {
     try {
       const endpoint = ENDPOINTS[currentTab];
-      const response = await fetch(`${API_BASE}${endpoint}`);
+      const response = await fetch(endpoint);
       const result = await response.json();
-      if (result.success) {
-        const data = result.data || [];
-        if (!data.length) { alert('Nenhum dado para exportar'); return; }
-
-        // Flatten simples para objetos aninhados
-        const flatten = (o,prefix='')=>Object.entries(o).reduce((acc,[k,v])=>{
-          const key = prefix?`${prefix}.${k}`:k;
-          if (v && typeof v==='object' && !Array.isArray(v)) Object.assign(acc, flatten(v,key));
-          else acc[key]=Array.isArray(v)?JSON.stringify(v): (v ?? '');
-          return acc;
-        },{});
-        const rows = data.map(flatten);
-        const headers = [...new Set(rows.flatMap(r=>Object.keys(r)))];
-        const csvRows = [headers.join(',')];
-
-        rows.forEach(row=>{
-          const values = headers.map(h=>{
-            const value = row[h] ?? '';
-            const s = String(value).replace(/"/g,'""');
-            return `"${s}"`;
-          });
-          csvRows.push(values.join(','));
-        });
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob(["\ufeff"+csvString], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = Object.assign(document.createElement("a"), {
-          href: url, download: `${endpoint}-export-${Date.now()}.csv`,
-        });
-        a.click(); URL.revokeObjectURL(url);
+      
+      // CORREÇÃO: Extrair dados da resposta
+      const data = result.data || result.embarcacoes || result.desembarques || result.pescadores || result || [];
+      
+      if (data.length === 0) { 
+        alert('Nenhum dado para exportar'); 
+        return; 
       }
+
+      // Flatten simples para objetos aninhados
+      const flatten = (o,prefix='')=>Object.entries(o).reduce((acc,[k,v])=>{
+        const key = prefix?`${prefix}.${k}`:k;
+        if (v && typeof v==='object' && !Array.isArray(v)) Object.assign(acc, flatten(v,key));
+        else acc[key]=Array.isArray(v)?JSON.stringify(v): (v ?? '');
+        return acc;
+      },{});
+      const rows = data.map(flatten);
+      const headers = [...new Set(rows.flatMap(r=>Object.keys(r)))];
+      const csvRows = [headers.join(',')];
+
+      rows.forEach(row=>{
+        const values = headers.map(h=>{
+          const value = row[h] ?? '';
+          const s = String(value).replace(/"/g,'""');
+          return `"${s}"`;
+        });
+        csvRows.push(values.join(','));
+      });
+
+      const csvString = csvRows.join('\n');
+      const blob = new Blob(["\ufeff"+csvString], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), {
+        href: url, 
+        download: `${currentTab}-export-${Date.now()}.csv`,
+      });
+      a.click(); 
+      URL.revokeObjectURL(url);
     } catch (error) {
       alert('Erro ao exportar: ' + error.message);
     }
@@ -736,5 +799,6 @@
   btnReject.addEventListener("click", () => updateStatus('rejected'));
 
   // init
+  console.log('🚀 Admin inicializado');
   render();
 })();
