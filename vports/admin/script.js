@@ -27,7 +27,7 @@
   const ENDPOINTS = {
     emb: window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/embarcacoes',
     des: window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE?.replace(API_BASE, '') || '/api/desembarques',
-    pes: '/api/pescadores', // Mantido como está, já que não está no urls.js
+    pes: '/pescadores', // Mantido como está, já que não está no urls.js
   };
 
   let currentTab = "emb"; // 'emb' | 'des' | 'pes'

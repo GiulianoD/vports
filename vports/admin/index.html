@@ -11,8 +11,60 @@
   
   <!-- ======== CSS ======== -->
   <link rel="stylesheet" href="style.css?v=1.1">
+  <link rel="stylesheet" href="../form/navbar.css?v=1.1">
 </head>
 <body>
+  <!-- NAV: Menu responsivo -->
+  <nav class="top-nav" aria-label="Menu principal">
+    <div class="nav-inner">
+      <!-- Logo esquerda -->
+      <div class="nav-logo-left">
+        <img src="/vports/res/evl/logo.200.png"
+            alt="Logo EVL" class="logo-left">
+      </div>
+
+      <!-- Botão hambúrguer (mobile) -->
+      <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+      </button>
+
+      <!-- Links centrais - APENAS LOGOUT -->
+      <ul id="navLinks" class="nav-links">
+        <!-- Botão de Logout -->
+        <li class="logout-item">
+          <button id="btnLogout" class="btn-logout" title="Sair do sistema">
+            <span class="logout-text">Sair</span>
+          </button>
+        </li>
+      </ul>
+      
+      <!-- Modal de Confirmação de Logout -->
+      <div id="logoutModal" class="modal-overlay">
+        <div class="modal-content">
+          <div class="modal-icon">🚪</div>
+          <h3 class="modal-title">Sair do Sistema</h3>
+          <p class="modal-message">Tem certeza que deseja sair do sistema?</p>
+          <div class="modal-buttons">
+            <button type="button" class="modal-btn modal-btn-cancel" id="modalCancel">
+              Cancelar
+            </button>
+            <button type="button" class="modal-btn modal-btn-confirm" id="modalConfirm">
+              Sim, Sair
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo direita -->
+      <div class="nav-logo-right">
+        <img src="/vports/res/vports/Marca_Vports-05%204.png"
+            alt="Logo VPorts" class="logo-right">
+      </div>
+    </div>
+  </nav>
+
   <div class="container">
     <header>
       <h1>Administração — Validação de Registros</h1>
@@ -82,8 +134,9 @@
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
         "../js/urls.js",      // Configurações de URLs primeiro
+        "../form/navbar.js",
         "script.js",
-        "../auth/logout.js"
+        "../auth/logoutAdmin.js"
     ];
 
     scripts.forEach(script => {
