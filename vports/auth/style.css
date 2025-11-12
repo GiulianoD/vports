@@ -124,41 +124,6 @@ body {
 }
 
 
-/* Estilos para a seção de usuários de teste */
-.test-users {
-    margin: 15px 0;
-    text-align: center;
-}
-
-.test-users details {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 5px;
-    padding: 10px;
-}
-
-.test-users summary {
-    cursor: pointer;
-    font-weight: bold;
-    color: #495057;
-}
-
-.users-list {
-    margin-top: 10px;
-    text-align: left;
-    font-size: 0.9em;
-}
-
-.users-list p {
-    margin: 5px 0;
-    padding: 3px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.users-list p:last-child {
-    border-bottom: none;
-}
-
 /* Estilos para mensagens */
 .message {
     padding: 12px;

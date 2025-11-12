@@ -4,21 +4,10 @@
    - UF -> Municípios (exemplos)
    - Campos condicionais (gênero/raca "Outro", artes "Outro", filiações)
    - Rascunho (localStorage)
-   - Salvar envio:
-       * Se houver DB.addPescador -> usa
-       * Caso contrário, salva em localStorage (db_pescadores)
+   - Salvar envio: POST /pescadores com Bearer Token
    ========================================================= */
-// 🔧 Envolva TODO o restante no DOMContentLoaded e **sempre** inicie o NAV:
+
 document.addEventListener('DOMContentLoaded', () => {
-  // 2) A partir daqui, só roda o código do formulário se ele existir
-  const form = document.getElementById("pescadorForm");
-  if (!form) return;
-
-  // ... (todo o SEU código atual do formulário vai aqui, inalterado) ...
-});
-
-
-(function () {
   const form = document.getElementById("pescadorForm");
   if (!form) return;
 
@@ -177,73 +166,139 @@ document.addEventListener('DOMContentLoaded', () => {
     raca.dispatchEvent(new Event("change"));
   });
 
-  /* ---------- Persistência do envio ---------- */
-  function saveLocalPescador(json) {
-    // fallback se não houver DB.addPescador
-    const KEY = "db_pescadores";
+  /* ---------- Função para obter informações do usuário logado ---------- */
+  function obterInformacoesUsuario() {
     try {
-      const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
-      const rec = {
-        id: "ID-" + Math.random().toString(36).slice(2, 8) + Date.now().toString(36),
-        type: "pescador",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        data: json
+      const token = obterAccessToken();
+      if (!token) {
+        console.warn('⚠️ Token não encontrado');
+        return null;
+      }
+
+      // Decodificar o token JWT para obter informações do usuário
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        id: payload.id,
+        nome: payload.nome,
+        funcao: payload.funcao
       };
-      arr.unshift(rec);
-      localStorage.setItem(KEY, JSON.stringify(arr));
-      // dispara evento de storage para admin (em outras abas)
-      try { localStorage.setItem("__touch__", Date.now().toString()); } catch {}
-      return rec.id;
-    } catch { return null; }
+    } catch (error) {
+      console.error('❌ Erro ao obter informações do usuário:', error);
+      return null;
+    }
   }
 
-  form.addEventListener("submit", (e) => {
+  /* ---------- Envio para API ---------- */
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // monta JSON simples
+    // Verificar se o usuário está autenticado
+    const usuario = obterInformacoesUsuario();
+    if (!usuario) {
+      alert("❌ Você precisa estar logado para cadastrar um pescador!");
+      window.location.href = '/login.html';
+      return;
+    }
+
+    console.log(`👤 Usuário logado: ${usuario.nome} (ID: ${usuario.id})`);
+
+    // Montar JSON com os dados do formulário
     const fd = new FormData(form);
-    const json = {};
+    const jsonData = {};
+    
+    // Converter FormData para objeto JSON
     fd.forEach((v, k) => {
       if (k.endsWith("[]")) {
         const base = k.slice(0, -2);
-        if (!json[base]) json[base] = [];
-        json[base].push(v);
-      } else if (json[k]) {
-        if (!Array.isArray(json[k])) json[k] = [json[k]];
-        json[k].push(v);
-      } else json[k] = v;
+        if (!jsonData[base]) jsonData[base] = [];
+        jsonData[base].push(v);
+      } else if (jsonData[k]) {
+        if (!Array.isArray(jsonData[k])) jsonData[k] = [jsonData[k]];
+        jsonData[k].push(v);
+      } else jsonData[k] = v;
     });
-    json.filiacoes = {
+
+    // Adicionar informações de filiação
+    jsonData.filiacoes = {
       sindicato: filSindicato.checked ? (filSindicatoNome.value.trim() || null) : null,
       associacao: filAssociacao.checked ? (filAssociacaoNome.value.trim() || null) : null,
       colonia: filColonia.checked ? (filColoniaNome.value.trim() || null) : null,
     };
 
-    // salva no "DB" local se existir API
-    let savedId = null;
+    // IMPRIMIR JSON NO CONSOLE
+    console.log('📦 JSON enviado na requisição:');
+    console.log(JSON.stringify(jsonData, null, 2));
+    console.log('👤 Usuário que está cadastrando:', usuario);
+    console.log('--- Dados brutos:', jsonData);
+
     try {
-      if (typeof DB?.addPescador === "function") {
-        savedId = DB.addPescador(json);
+      // USANDO URL CONFIGURADA DO urls.js
+      const pescadoresURL = window.URLS_CONFIG?.PESCADORES_ENDPOINTS?.BASE || 
+                           'http://localhost:2002/pescadores';
+
+      console.log('🌐 Enviando dados para:', pescadoresURL);
+      console.log('🔐 Token de acesso:', obterAccessToken() ? 'Presente' : 'Ausente');
+
+      // Enviar como JSON
+      const response = await fetch(pescadoresURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${obterAccessToken()}`
+        },
+        body: JSON.stringify(jsonData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          alert("✅ Pescador cadastrado com sucesso!");
+          console.log(`📝 Pescador ID ${result.pescador_id} cadastrado pelo usuário ID ${result.adicionado_por}`);
+
+          // Limpar formulário após sucesso
+          localStorage.removeItem(DRAFT_KEY);
+          form.reset();
+          municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
+          arteOutroChk.checked = false;
+          arteOutroContainer.classList.add("hidden");
+          toggleFil();
+          genero.dispatchEvent(new Event("change"));
+          raca.dispatchEvent(new Event("change"));
+        } else {
+          alert("❌ Erro ao cadastrar: " + (result.error || "Erro desconhecido"));
+        }
       } else {
-        savedId = saveLocalPescador(json);
+        if (response.status === 401) {
+          alert("🔐 Sessão expirada. Faça login novamente.");
+          window.location.href = '/login.html';
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Erro do servidor:', errorText);
+          alert("❌ Erro no servidor: " + errorText);
+        }
       }
-    } catch {}
-
-    console.log("Pescador salvo:", json, "id:", savedId);
-    alert("Cadastro enviado com sucesso!");
-
-    // limpa
-    localStorage.removeItem(DRAFT_KEY);
-    form.reset();
-    municipio.innerHTML = '<option value="">Selecione a UF primeiro</option>';
-    arteOutroChk.checked = false;
-    arteOutroContainer.classList.add("hidden");
-    toggleFil();
-    genero.dispatchEvent(new Event("change"));
-    raca.dispatchEvent(new Event("change"));
+    } catch (error) {
+      console.error("❌ Falha no envio:", error);
+      alert("❌ Erro de conexão. Verifique sua internet e tente novamente.");
+    }
   });
 
+  /* ---------- Verificar autenticação ao carregar a página ---------- */
+  function verificarAutenticacao() {
+    const token = obterAccessToken();
+    if (!token) {
+      alert("🔐 Você precisa fazer login para acessar esta página!");
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const usuario = obterInformacoesUsuario();
+    if (usuario) {
+      console.log(`✅ Usuário autenticado: ${usuario.nome} (${usuario.funcao})`);
+    }
+  }
+
   /* ---------- Init ---------- */
+  verificarAutenticacao();
   restaurarRascunho();
-})();
+});

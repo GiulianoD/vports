@@ -17,6 +17,7 @@ const API_PREFIX = '';
 const AUTH_PREFIX = `${API_PREFIX}`;
 const EMBARCACOES_PREFIX = `${API_PREFIX}/embarcacoes`;
 const DESEMBARQUES_PREFIX = `${API_PREFIX}/desembarques`;
+const PESCADORES_PREFIX = `${API_PREFIX}/desembarques`;
 const USUARIOS_PREFIX = `${API_PREFIX}/usuarios`;
 const SYSTEM_PREFIX = `${API_PREFIX}/system`;
 
@@ -39,6 +40,12 @@ const DESEMBARQUES_ENDPOINTS = {
   BASE: DESEMBARQUES_PREFIX,
   BY_ID: `${DESEMBARQUES_PREFIX}/:id`,
   STATUS: `${DESEMBARQUES_PREFIX}/:id/status`
+};
+
+// Endpoints de pescadores
+const PESCADORES_ENDPOINTS = {
+  BASE: EMBARCACOES_PREFIX,
+  BY_ID: `${PESCADORES_PREFIX}/:id`
 };
 
 // Endpoints de usuários
@@ -93,6 +100,7 @@ if (typeof window !== 'undefined') {
       AUTH: AUTH_ENDPOINTS,
       EMBARCACOES: EMBARCACOES_ENDPOINTS,
       DESEMBARQUES: DESEMBARQUES_ENDPOINTS,
+      PESCADORES: PESCADORES_ENDPOINTS,
       USUARIOS: USUARIOS_ENDPOINTS,
       SYSTEM: SYSTEM_ENDPOINTS
     },

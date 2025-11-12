@@ -84,12 +84,12 @@
         </div>
 
         <div class="form-group">
-          <label for="nomeCompleto">Vulgo (Apelido)</label>
-          <input type="text" id="nomeCompleto" name="nomeCompleto">
+          <label for="vulgo">Vulgo (Apelido)</label>
+          <input type="text" id="vulgo" name="vulgo">
         </div>
 
         <div class="form-group">
-          <label for="nomeCompleto">Documento</label>
+          <label for="documento">Documento</label>
           <input type="text" id="documento" name="documento">
         </div>
 
@@ -100,6 +100,7 @@
               <option value="">Selecione</option>
               <option>Feminino</option>
               <option>Masculino</option>
+              <option>Outro</option>
             </select>
             <div id="generoOutroContainer" class="hidden">
               <input type="text" id="generoOutro" name="generoOutro" placeholder="Especifique">
@@ -125,7 +126,7 @@
 
           <div class="form-group">
             <label for="idade">Idade</label>
-            <input type="number" id="idade" name="idade" min="10" max="120">
+            <input type="number" id="idade" name="idade" min="1" max="120">
           </div>
 
           <div class="form-group">
@@ -247,7 +248,7 @@
 
     // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
-        "../../js/urls.js",
+        "../../js/urls.js",      // Configurações de URLs primeiro
         "../../auth/logout.js",
         "../navbar.js",
         "script.js"
