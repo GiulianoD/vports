@@ -236,8 +236,22 @@
           
           console.log(`📋 Detalhes recebidos:`, result);
           
-          if (result.success) {
-            openDrawer(result.data, type);
+          // CORREÇÃO: Tratar diferentes estruturas de resposta
+          let recordData;
+          if (result.data) {
+            recordData = result.data;
+          } else if (result.embarcacao) {
+            recordData = result.embarcacao;
+          } else if (result.desembarque) {
+            recordData = result.desembarque;
+          } else if (result.pescador) {
+            recordData = result.pescador;
+          } else {
+            recordData = result; // fallback
+          }
+          
+          if (result.success || recordData) {
+            openDrawer(recordData, type);
           } else {
             alert('Erro ao carregar detalhes: ' + (result.message || 'Erro desconhecido'));
           }
@@ -252,16 +266,33 @@
   // ... (o restante das funções permanece igual: openDrawer, renderAttachmentsGallery, etc.)
 
   function openDrawer(rec, coll) {
+    if (!rec) {
+      console.error('❌ Registro não encontrado ou inválido');
+      alert('Erro: Registro não encontrado ou inválido');
+      return;
+    }
+
     selectedRecord = { rec, coll }; // coll: 'embarcacao' | 'desembarque' | 'pescador'
 
     if (coll === "embarcacao") {
+      // CORREÇÃO: Verificar se rgp existe antes de usar
       const rgp = rec.rgp ? ` (${rec.rgp})` : "";
       drawerTitle.textContent = `Embarcação — ${rec.nome_embarcacao || rec.id}${rgp}`;
     } else if (coll === "desembarque") {
-      const embarcacaoNome = rec.nome_embarcacao || (rec.embarcacoes ? rec.embarcacoes.nome_embarcacao : '') || 'N/A';
+      // CORREÇÃO: Verificação mais segura para nome da embarcação
+      let embarcacaoNome = 'N/A';
+      if (rec.nome_embarcacao) {
+        embarcacaoNome = rec.nome_embarcacao;
+      } else if (rec.embarcacoes && rec.embarcacoes.nome_embarcacao) {
+        embarcacaoNome = rec.embarcacoes.nome_embarcacao;
+      } else if (rec.embarcacao && rec.embarcacao.nome_embarcacao) {
+        embarcacaoNome = rec.embarcacao.nome_embarcacao;
+      }
       drawerTitle.textContent = `Desembarque — ${embarcacaoNome} (${formatDate(rec.data_desembarque)})`;
     } else {
-      drawerTitle.textContent = `Pescador(a) — ${rec.nomeCompleto || rec.nome || rec.id}`;
+      // CORREÇÃO: Verificação mais segura para nome do pescador
+      const nomePescador = rec.nomeCompleto || rec.nome || rec.id;
+      drawerTitle.textContent = `Pescador(a) — ${nomePescador}`;
     }
 
     const processedData = processRecordData(rec, coll);
