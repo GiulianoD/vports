@@ -3,7 +3,6 @@
    Padrões:
    - UF -> Municípios (exemplos)
    - Campos condicionais (gênero/raca "Outro", artes "Outro", filiações)
-   - Validação básica
    - Rascunho (localStorage)
    - Salvar envio:
        * Se houver DB.addPescador -> usa
@@ -100,49 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
   filSindicato.addEventListener("change", toggleFil);
   filAssociacao.addEventListener("change", toggleFil);
   filColonia.addEventListener("change", toggleFil);
-
-  /* ---------- Validação ---------- */
-  function validar() {
-    const nome = document.getElementById("nomeCompleto").value.trim();
-    if (!nome) return "Informe o nome completo.";
-
-    if (!genero.value) return "Informe o gênero.";
-    if (genero.value === "Outro" && !document.getElementById("generoOutro").value.trim()) {
-      return "Especifique o gênero (Outro).";
-    }
-
-    if (!raca.value) return "Informe a raça/cor.";
-    if (raca.value === "Outro" && !document.getElementById("racaOutro").value.trim()) {
-      return "Especifique a raça/cor (Outro).";
-    }
-
-    const idade = Number(document.getElementById("idade").value);
-    if (!Number.isFinite(idade) || idade < 10 || idade > 120) return "Informe uma idade válida.";
-
-    const fam = Number(document.getElementById("membrosFamilia").value);
-    if (!Number.isFinite(fam) || fam < 1 || fam > 30) return "Informe a quantidade de membros da família (1–30).";
-
-    if (!uf.value) return "Selecione a UF.";
-    if (!municipio.value) return "Selecione o município.";
-
-    const localPesca = document.getElementById("localOndePesca").value.trim();
-    if (!localPesca) return "Informe o local onde pesca.";
-
-    // artes: pelo menos uma? (opcional ajustar)
-    const algumaArte = [...document.querySelectorAll('input[name="artes[]"]')].some(i => i.checked) || arteOutroChk.checked;
-    if (!algumaArte) return "Selecione pelo menos uma arte de pesca.";
-
-    if (arteOutroChk.checked && !arteOutro.value.trim()) {
-      return "Especifique a outra arte de pesca.";
-    }
-
-    // filiação: se marcar, precisa nome
-    if (filSindicato.checked && !filSindicatoNome.value.trim()) return "Informe o nome do sindicato.";
-    if (filAssociacao.checked && !filAssociacaoNome.value.trim()) return "Informe o nome da associação.";
-    if (filColonia.checked && !filColoniaNome.value.trim()) return "Informe o nome/identificação da colônia.";
-
-    return null;
-  }
 
   /* ---------- Rascunho ---------- */
   const DRAFT_KEY = "draft_pescador_v1";
@@ -244,9 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-
-    const erro = validar();
-    if (erro) return alert(erro);
 
     // monta JSON simples
     const fd = new FormData(form);
