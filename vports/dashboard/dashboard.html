@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VPorts — Dashboard</title>
+
+  <link rel="stylesheet" href="../form/navbar.css?v=1.1">
+  <link rel="stylesheet" href="dashboard.css?v=1.1">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- NAV (reaproveite seu navbar) -->
+  <nav class="top-nav" aria-label="Menu principal">
+    <div class="nav-inner">
+      <div class="nav-logo-left">
+        <img src="/vports/res/evl/logo.200.png" alt="Logo EVL" class="logo-left">
+      </div>
+
+      <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Abrir menu">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+      </button>
+
+      <ul id="navLinks" class="nav-links">
+        <li><a class="nav-link active" href="#">Dashboard</a></li>
+      </ul>
+
+      <div class="nav-logo-right">
+        <img src="/vports/res/vports/Marca_Vports-05%204.png" alt="Logo VPorts" class="logo-right">
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="page-header">
+      <h1>Dashboard — Resultados</h1>
+      <p>Indicadores por período e por local (somente registros aprovados).</p>
+    </header>
+
+    <!-- FILTROS -->
+    <section class="card filters">
+      <div class="filters-grid">
+        <div class="field">
+          <label for="periodPreset">Período</label>
+          <select id="periodPreset">
+            <option value="7d">Últimos 7 dias</option>
+            <option value="month">Este mês</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="startDate">Início</label>
+          <input type="date" id="startDate">
+        </div>
+
+        <div class="field">
+          <label for="endDate">Fim</label>
+          <input type="date" id="endDate">
+        </div>
+
+        <div class="field">
+          <label for="scopeType">Filtro</label>
+          <select id="scopeType">
+            <option value="geral">Geral</option>
+            <option value="regiao">Município/Região</option>
+            <option value="local">Ponto de desembarque</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="scopeValue">Valor</label>
+          <select id="scopeValue" disabled>
+            <option value="">Selecione</option>
+          </select>
+        </div>
+
+        <div class="field actions">
+          <button id="btnApply" class="btn-primary" type="button">Aplicar</button>
+        </div>
+      </div>
+
+      <div class="hint" id="statusHint">—</div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-title">Média desembarques/dia</div>
+        <div class="kpi-value" id="kpiAvgTrips">0</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-title">Média captura (kg)/dia</div>
+        <div class="kpi-value" id="kpiAvgKg">0</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-title">Média esforço (h)/dia</div>
+        <div class="kpi-value" id="kpiAvgEffort">0</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-title">Esforço total (HH:MM)</div>
+        <div class="kpi-value" id="kpiEffortTotal">00:00</div>
+      </div>
+    </section>
+
+    <!-- GRÁFICOS -->
+    <section class="grid-2">
+      <div class="card chart-card">
+        <h2>Captura total por dia (kg)</h2>
+        <canvas id="chartKgPerDay"></canvas>
+      </div>
+
+      <div class="card chart-card">
+        <h2>Principais espécies — Local</h2>
+        <canvas id="chartPieLocal"></canvas>
+      </div>
+
+      <div class="card chart-card">
+        <h2>Principais espécies — Geral</h2>
+        <canvas id="chartPieGeral"></canvas>
+      </div>
+
+      <div class="card chart-card">
+        <h2>Resumo</h2>
+        <div class="summary" id="summaryBox">
+          Selecione um período e aplique os filtros.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../navbar.js?v=1.1"></script>
+  <script src="dashboard.js?v=1.1"></script>
+</body>
+</html>
