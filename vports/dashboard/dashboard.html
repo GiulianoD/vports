@@ -137,7 +137,28 @@
     </section>
   </main>
 
-  <script src="../navbar.js?v=1.1"></script>
-  <script src="dashboard.js?v=1.1"></script>
+  <!-- FORÇA OS SCRIPTS ESTAREM SEMPRE ATUALIZADOS -->
+  <script>
+    // Função para obter o timestamp atual
+    function getTimestamp() {
+        return new Date().getTime();
+    }
+
+    // Adicionando o timestamp aos scripts para evitar cache
+    const scripts = [
+      "../js/urls.js",      // Configurações de URLs primeiro
+      "../form/navbar.js",
+      "../auth/public.js",
+      "dashboard.js"
+    ];
+
+    scripts.forEach(script => {
+        const scriptElement = document.createElement('script');
+        scriptElement.src = script + '?v=' + getTimestamp();
+        scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
+        document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
+    });
+  </script>
+
 </body>
 </html>

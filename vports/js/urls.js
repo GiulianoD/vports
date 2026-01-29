@@ -19,6 +19,7 @@ const EMBARCACOES_PREFIX = `${API_PREFIX}/embarcacoes`;
 const DESEMBARQUES_PREFIX = `${API_PREFIX}/desembarques`;
 const PESCADORES_PREFIX = `${API_PREFIX}/pescadores`;
 const USUARIOS_PREFIX = `${API_PREFIX}/usuarios`;
+const DASHBOARD_PREFIX = `${API_PREFIX}/dashboard`;
 const SYSTEM_PREFIX = `${API_PREFIX}/system`;
 
 // Endpoints de autenticação
@@ -59,6 +60,12 @@ const SYSTEM_ENDPOINTS = {
   DATABASE_INFO: `${SYSTEM_PREFIX}/database-info`
 };
 
+// Endpoints do dashboard - Adicionado com a estrutura correta
+const DASHBOARD_ENDPOINTS = {
+  BASE: DASHBOARD_PREFIX,
+  DESEMBARQUES: `${DASHBOARD_PREFIX}/desembarques`
+};
+
 // URLs completas
 const FULL_URLS = {
   AUTH: {
@@ -78,6 +85,10 @@ const FULL_URLS = {
   SYSTEM: {
     HEALTH: `${BASE_URL}${SYSTEM_ENDPOINTS.HEALTH}`,
     DATABASE_INFO: `${BASE_URL}${SYSTEM_ENDPOINTS.DATABASE_INFO}`
+  },
+  DASHBOARD: {
+    BASE: `${BASE_URL}${DASHBOARD_ENDPOINTS.BASE}`,
+    DESEMBARQUES: `${BASE_URL}${DASHBOARD_ENDPOINTS.DESEMBARQUES}`
   }
 };
 
@@ -88,6 +99,9 @@ const URLS_CONFIG = {
   AUTH_ENDPOINTS: FULL_URLS.AUTH,
   EMBARCACOES_ENDPOINTS: FULL_URLS.EMBARCACOES,
   DESEMBARQUES_ENDPOINTS: FULL_URLS.DESEMBARQUES,
+  USUARIOS_ENDPOINTS: FULL_URLS.USUARIOS,
+  DASHBOARD_ENDPOINTS: FULL_URLS.DASHBOARD, // Adicionado aqui
+  SYSTEM_ENDPOINTS: FULL_URLS.SYSTEM,
   PESCADORES_ENDPOINTS: FULL_URLS.PESCADORES
 };
 
@@ -95,6 +109,7 @@ const URLS_CONFIG = {
 if (typeof window !== 'undefined') {
   // Ambiente Browser
   window.URLS_CONFIG = URLS_CONFIG;
+  window.accessTokenVports = accessToken;
 } else {
   // Ambiente Node.js
   module.exports = {
@@ -106,8 +121,11 @@ if (typeof window !== 'undefined') {
       DESEMBARQUES: DESEMBARQUES_ENDPOINTS,
       PESCADORES: PESCADORES_ENDPOINTS,
       USUARIOS: USUARIOS_ENDPOINTS,
+      DASHBOARD: DASHBOARD_ENDPOINTS, // Adicionado aqui também para Node.js
       SYSTEM: SYSTEM_ENDPOINTS
     },
+    URLS_CONFIG,
+    accessToken,
     FULL_URLS
   };
 }

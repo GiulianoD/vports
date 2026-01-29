@@ -1,5 +1,9 @@
 // Se você já tem auth helpers, o dashboard usa
 // obterAccessToken() se existir. Se não existir, segue sem Authorization.
+
+// const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE;
+const DASHBOARD_DESEMBARQUES_URL = window.URLS_CONFIG?.DASHBOARD_ENDPOINTS?.DESEMBARQUES;
+
 function getAuthHeader() {
   try {
     if (typeof obterAccessToken === "function") {
@@ -176,8 +180,16 @@ async function loadDashboard(){
   if (scopeType !== "geral") url.searchParams.set("scope_value", scopeValue);
 
   try {
-    const resp = await fetch(url.toString(), { headers: { ...getAuthHeader() } });
+    const resp = await fetch(DASHBOARD_DESEMBARQUES_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${obterAccessToken()}`
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Miwibm9tZSI6Im1lcnljaWFuZSIsImZ1bmNhbyI6IlZpbGEgVmVsaGEiLCJleHAiOjE3Njk3MjAxODcsImlhdCI6MTc2OTYzMzc4N30.nt5ssnIVspaanNj1AG19KmZ3BmAtUTjCC85lriTkdcg`
+      }
+    });
     const json = await resp.json();
+    console.log(json)
     if (!json.success) throw new Error(json.error || "Falha ao carregar dashboard");
 
     setKpis(json.kpis);
