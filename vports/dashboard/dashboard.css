@@ -83,7 +83,7 @@ body {
 .kpi-grid{
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -92,6 +92,36 @@ body {
   border-radius: 10px;
   box-shadow: 0 1px 10px rgba(0,0,0,.06);
   padding: 14px;
+  position: relative;
+}
+
+.kpi .kpi-title {
+  position: relative;
+  display: inline-block;
+}
+
+.kpi .kpi-title[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  margin-bottom: 5px;
+}
+
+.kpi .kpi-title[title]::after {
+  content: 'ⓘ';
+  font-size: 10px;
+  color: #666;
+  margin-left: 4px;
+  cursor: help;
 }
 
 .kpi-title{ font-size: 13px; color: #666; margin-bottom: 8px; }

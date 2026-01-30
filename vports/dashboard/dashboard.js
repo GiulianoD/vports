@@ -23,9 +23,8 @@ const REGIOES = {
 
 // Charts
 let chartKgPerDay = null;
-let chartPieLocal = null;
-let chartPieGeral = null;
-let rawSpeciesData = { local: [], geral: [] };
+let chartEspecies = null;
+let rawSpeciesData = [];
 
 function isoDate(d) {
   const yyyy = d.getFullYear();
@@ -95,10 +94,23 @@ function populateScopeValue() {
 }
 
 function setKpis(kpis){
-  document.getElementById("kpiAvgTrips").textContent = kpis.media_desembarques_dia ?? 0;
-  document.getElementById("kpiAvgKg").textContent = kpis.media_kg_dia ?? 0;
-  document.getElementById("kpiAvgEffort").textContent = kpis.media_esforco_horas_dia ?? 0;
+  document.getElementById("kpiAvgTrips").textContent = kpis.media_desembarques_dia?.toFixed(2) ?? 0;
+  document.getElementById("kpiAvgKg").textContent = kpis.media_kg_dia?.toFixed(2) ?? 0;
+  document.getElementById("kpiAvgEffort").textContent = kpis.media_esforco_horas_dia?.toFixed(2) ?? 0;
   document.getElementById("kpiEffortTotal").textContent = kpis.total_esforco_hhmm ?? "00:00";
+  
+  // NOVOS KPIs
+  document.getElementById("kpiTotalKg").textContent = kpis.total_kg?.toFixed(2) ?? 0;
+  
+  // Calcular CPUE (kg/h)
+  let cpue = 0;
+  if (kpis.total_kg > 0) {
+    const totalHours = hhmmToHours(kpis.total_esforco_hhmm);
+    if (totalHours > 0) {
+      cpue = kpis.total_kg / totalHours;
+    }
+  }
+  document.getElementById("kpiCpue").textContent = cpue.toFixed(2);
 }
 
 function renderKgPerDay(series){
@@ -151,12 +163,19 @@ function groupSpecies(items, limit) {
   return result;
 }
 
-function renderPie(canvasId, items, title = ''){
-  const ctx = document.getElementById(canvasId);
+function renderEspeciesChart(items, title = 'Espécies Capturadas'){
+  const ctx = document.getElementById("chartEspecies");
   
   if (!items || items.length === 0) {
     // Limpar canvas se não houver dados
-    ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+    const context = ctx.getContext('2d');
+    context.clearRect(0, 0, ctx.width, ctx.height);
+    
+    // Mostrar mensagem de "Sem dados"
+    context.fillStyle = '#999';
+    context.font = '14px Arial';
+    context.textAlign = 'center';
+    context.fillText('Sem dados disponíveis', ctx.width/2, ctx.height/2);
     return null;
   }
   
@@ -172,7 +191,9 @@ function renderPie(canvasId, items, title = ''){
     '#1982C4', '#6A4C93'
   ];
   
-  return new Chart(ctx, {
+  if (chartEspecies) chartEspecies.destroy();
+  
+  chartEspecies = new Chart(ctx, {
     type: "pie",
     data: {
       labels,
@@ -185,17 +206,34 @@ function renderPie(canvasId, items, title = ''){
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       plugins: {
         legend: {
           position: "bottom",
-          // position: "right",
           labels: {
             font: {
               size: 11
             },
             padding: 10,
             boxWidth: 12,
-            usePointStyle: true
+            usePointStyle: true,
+            generateLabels: function(chart) {
+              const data = chart.data;
+              if (data.labels.length && data.datasets.length) {
+                return data.labels.map(function(label, i) {
+                  const value = data.datasets[0].data[i];
+                  const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return {
+                    text: `${label}: ${value.toFixed(1)} kg (${percentage}%)`,
+                    fillStyle: data.datasets[0].backgroundColor[i],
+                    hidden: false,
+                    index: i
+                  };
+                });
+              }
+              return [];
+            }
           }
         },
         tooltip: {
@@ -208,27 +246,59 @@ function renderPie(canvasId, items, title = ''){
               return `${label}: ${value.toFixed(1)} kg (${percentage}%)`;
             }
           }
+        },
+        title: {
+          display: true,
+          text: title,
+          font: {
+            size: 16,
+            weight: 'bold'
+          },
+          padding: {
+            top: 10,
+            bottom: 20
+          }
         }
       }
     }
   });
 }
 
-function renderPies(localItems, geralItems, groupLimit = 0){
-  if (chartPieLocal) chartPieLocal.destroy();
-  if (chartPieGeral) chartPieGeral.destroy();
-  
-  // Aplicar agrupamento se necessário
-  const localGrouped = groupSpecies(localItems || [], groupLimit);
-  const geralGrouped = groupSpecies(geralItems || [], groupLimit);
-  
-  chartPieLocal = renderPie("chartPieLocal", localGrouped, "Principais espécies — Local");
-  chartPieGeral = renderPie("chartPieGeral", geralGrouped, "Principais espécies — Geral");
+function setSummaryBox(payload){
+  const box = document.getElementById("summaryBox");
+  const f = payload.filters;
+  const k = payload.kpis;
+
+  box.innerHTML = `
+    <div><b>Período:</b> ${f.start} até ${f.end}</div>
+    <div><b>Filtro:</b> ${f.scope_type}${f.scope_value ? " — " + f.scope_value : ""}</div>
+    <div style="margin-top:8px"><b>Total desembarques:</b> ${k.total_desembarques}</div>
+    <div><b>Total capturado:</b> ${k.total_kg} kg</div>
+    <div><b>Esforço total:</b> ${k.total_esforco_hhmm}</div>
+  `;
 }
 
-function updateChartsWithGrouping() {
+function updateEspeciesChart() {
   const groupLimit = parseInt(document.getElementById("groupLimit").value) || 0;
-  renderPies(rawSpeciesData.local, rawSpeciesData.geral, groupLimit);
+  const scopeType = document.getElementById("scopeType").value;
+  const scopeValue = document.getElementById("scopeValue").value;
+  
+  // Definir título baseado no filtro
+  let title = 'Espécies Capturadas';
+  if (scopeType === 'local' && scopeValue) {
+    title = `Espécies Capturadas - ${scopeValue}`;
+  } else if (scopeType === 'regiao' && scopeValue) {
+    title = `Espécies Capturadas - ${scopeValue}`;
+  }
+  
+  // Usar dados locais se filtro for local, senão usar dados gerais
+  let speciesData = rawSpeciesData;
+  
+  // Se quiser manter a lógica anterior de local/geral, ajuste aqui
+  // Atualmente usando apenas os dados recebidos da API
+  
+  const groupedData = groupSpecies(speciesData, groupLimit);
+  renderEspeciesChart(groupedData, title);
 }
 
 async function loadDashboard(){
@@ -254,7 +324,6 @@ async function loadDashboard(){
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        // 'Authorization': `Bearer ${obterAccessToken()}`
         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Miwibm9tZSI6Im1lcnljaWFuZSIsImZ1bmNhbyI6IlZpbGEgVmVsaGEiLCJleHAiOjE3Njk3MjAxODcsImlhdCI6MTc2OTYzMzc4N30.nt5ssnIVspaanNj1AG19KmZ3BmAtUTjCC85lriTkdcg`
       }
     });
@@ -263,27 +332,55 @@ async function loadDashboard(){
     if (!json.success) throw new Error(json.error || "Falha ao carregar dashboard");
 
     // Armazenar os dados brutos das espécies
-    rawSpeciesData.local = json.pie_especies_local || [];
-    rawSpeciesData.geral = json.pie_especies_geral || [];
+    // Usar dados locais ou gerais dependendo do filtro
+    if (scopeType === 'geral' || scopeType === 'regiao') {
+      rawSpeciesData = json.pie_especies_geral || [];
+    } else {
+      rawSpeciesData = json.pie_especies_local || [];
+    }
     
     setKpis(json.kpis);
     renderKgPerDay(json.series_captura_dia || []);
     
-    // Renderizar gráficos com o limite de agrupamento atual
-    renderPies(rawSpeciesData.local, rawSpeciesData.geral, groupLimit);
+    // Renderizar gráfico de espécies
+    updateEspeciesChart();
     
-    // setSummaryBox(json);
+    // Adicionar o resumo de volta
+    setSummaryBox(json);
 
-    // Atualizar hint com contagem de espécies
-    const localCount = rawSpeciesData.local.length;
-    const geralCount = rawSpeciesData.geral.length;
-    hint.textContent = `OK — ${json.kpis.total_desembarques} desembarques aprovados no período. ${localCount} espécies (local) / ${geralCount} espécies (geral).`;
+    // Atualizar hint
+    const speciesCount = rawSpeciesData.length;
+    let cpueHint = "";
+    if (json.kpis.total_kg > 0) {
+      const totalHours = hhmmToHours(json.kpis.total_esforco_hhmm);
+      if (totalHours > 0) {
+        const cpue = json.kpis.total_kg / totalHours;
+        cpueHint = ` | CPUE: ${cpue.toFixed(2)} kg/h`;
+      }
+    }
+    
+    hint.textContent = `OK — ${json.kpis.total_desembarques} desembarques aprovados. ${speciesCount} espécies capturadas.${cpueHint}`;
     
   } catch (e){
     console.error(e);
     hint.textContent = "Erro ao carregar dados do dashboard. Verifique o backend e a autenticação.";
   }
 }
+
+function hhmmToHours(hhmm) {
+  if (!hhmm || hhmm === "00:00") return 0;
+  
+  const [hours, minutes] = hhmm.split(':').map(Number);
+  return hours + (minutes / 60);
+}
+
+function hoursToHhmm(hours) {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const presetEl = document.getElementById("periodPreset");
@@ -296,9 +393,22 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Adicionar listener para o seletor de agrupamento
   groupLimitEl.addEventListener("change", () => {
-    if (rawSpeciesData.local.length > 0 || rawSpeciesData.geral.length > 0) {
-      updateChartsWithGrouping();
+    if (rawSpeciesData.length > 0) {
+      updateEspeciesChart();
     }
+  });
+  
+  // Adicionar listener para o filtro de escopo
+  scopeTypeEl.addEventListener("change", () => {
+    // Quando mudar o filtro, recarregar os dados
+    if (document.getElementById("scopeValue").value || scopeTypeEl.value === "geral") {
+      loadDashboard();
+    }
+  });
+  
+  document.getElementById("scopeValue").addEventListener("change", () => {
+    // Quando mudar o valor do filtro, recarregar os dados
+    loadDashboard();
   });
   
   btn.addEventListener("click", loadDashboard);

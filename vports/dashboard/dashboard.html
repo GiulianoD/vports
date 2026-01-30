@@ -111,6 +111,12 @@
         <div class="kpi-value" id="kpiAvgKg">0</div>
       </div>
 
+      <!-- NOVO KPI: Total captura (kg) -->
+      <div class="kpi">
+        <div class="kpi-title">Total captura (kg)</div>
+        <div class="kpi-value" id="kpiTotalKg">0</div>
+      </div>
+
       <div class="kpi">
         <div class="kpi-title">Média esforço (h)/dia</div>
         <div class="kpi-value" id="kpiAvgEffort">0</div>
@@ -119,6 +125,12 @@
       <div class="kpi">
         <div class="kpi-title">Esforço total (HH:MM)</div>
         <div class="kpi-value" id="kpiEffortTotal">00:00</div>
+      </div>
+
+      <!-- NOVO KPI: CPUE (kg/h) -->
+      <div class="kpi">
+        <div class="kpi-title" title="Captura por Unidade de Esforço - Quilogramas por hora de pesca">CPUE (kg/h)</div>
+        <div class="kpi-value" id="kpiCpue">0</div>
       </div>
     </section>
 
@@ -130,13 +142,8 @@
       </div>
 
       <div class="card chart-card">
-        <h2>Principais espécies — Local</h2>
-        <canvas id="chartPieLocal"></canvas>
-      </div>
-
-      <div class="card chart-card">
-        <h2>Principais espécies — Geral</h2>
-        <canvas id="chartPieGeral"></canvas>
+        <h2>Espécies Capturadas</h2>
+        <canvas id="chartEspecies"></canvas>
       </div>
 
       <div class="card chart-card">
