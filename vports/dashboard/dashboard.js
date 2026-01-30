@@ -25,6 +25,7 @@ const REGIOES = {
 let chartKgPerDay = null;
 let chartPieLocal = null;
 let chartPieGeral = null;
+let rawSpeciesData = { local: [], geral: [] };
 
 function isoDate(d) {
   const yyyy = d.getFullYear();
@@ -122,44 +123,112 @@ function renderKgPerDay(series){
   });
 }
 
-function renderPie(canvasId, items){
+function groupSpecies(items, limit) {
+  if (limit === 0 || items.length <= limit) {
+    // Mostrar todas as espécies sem agrupar
+    return items;
+  }
+  
+  // Ordenar por valor (se já não estiver ordenado)
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  
+  // Pegar as top N espécies
+  const top = sorted.slice(0, limit);
+  
+  // Calcular o total das "outras" espécies
+  const others = sorted.slice(limit);
+  const othersSum = others.reduce((sum, item) => sum + item.value, 0);
+  
+  // Criar novo array com "Outras"
+  const result = [...top];
+  if (othersSum > 0) {
+    result.push({
+      label: `Outras (${others.length} espécies)`,
+      value: othersSum
+    });
+  }
+  
+  return result;
+}
+
+function renderPie(canvasId, items, title = ''){
   const ctx = document.getElementById(canvasId);
+  
+  if (!items || items.length === 0) {
+    // Limpar canvas se não houver dados
+    ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+    return null;
+  }
+  
   const labels = items.map(x => x.label);
   const data = items.map(x => x.value);
 
+  // Gerar cores dinamicamente
+  const colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+    '#8AC926', '#1982C4', '#6A4C93', '#FF595E', '#6A994E', '#0077B6',
+    '#FF7F11', '#118AB2', '#06D6A0', '#EF476F', '#FFD166', '#073B4C',
+    '#7209B7', '#3A86FF', '#FB5607', '#8338EC', '#FF006E', '#8AC926',
+    '#1982C4', '#6A4C93'
+  ];
+  
   return new Chart(ctx, {
     type: "pie",
     data: {
       labels,
-      datasets: [{ data }]
+      datasets: [{
+        data,
+        backgroundColor: colors.slice(0, items.length),
+        borderWidth: 1,
+        borderColor: '#fff'
+      }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: "bottom" } }
+      plugins: {
+        legend: {
+          position: "bottom",
+          // position: "right",
+          labels: {
+            font: {
+              size: 11
+            },
+            padding: 10,
+            boxWidth: 12,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || '';
+              const value = context.parsed || 0;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${value.toFixed(1)} kg (${percentage}%)`;
+            }
+          }
+        }
+      }
     }
   });
 }
 
-function renderPies(localItems, geralItems){
+function renderPies(localItems, geralItems, groupLimit = 0){
   if (chartPieLocal) chartPieLocal.destroy();
   if (chartPieGeral) chartPieGeral.destroy();
-
-  chartPieLocal = renderPie("chartPieLocal", localItems || []);
-  chartPieGeral = renderPie("chartPieGeral", geralItems || []);
+  
+  // Aplicar agrupamento se necessário
+  const localGrouped = groupSpecies(localItems || [], groupLimit);
+  const geralGrouped = groupSpecies(geralItems || [], groupLimit);
+  
+  chartPieLocal = renderPie("chartPieLocal", localGrouped, "Principais espécies — Local");
+  chartPieGeral = renderPie("chartPieGeral", geralGrouped, "Principais espécies — Geral");
 }
 
-function setSummaryBox(payload){
-  const box = document.getElementById("summaryBox");
-  const f = payload.filters;
-  const k = payload.kpis;
-
-  box.innerHTML = `
-    <div><b>Período:</b> ${f.start} até ${f.end}</div>
-    <div><b>Filtro:</b> ${f.scope_type}${f.scope_value ? " — " + f.scope_value : ""}</div>
-    <div style="margin-top:8px"><b>Total desembarques:</b> ${k.total_desembarques}</div>
-    <div><b>Total capturado:</b> ${k.total_kg} kg</div>
-    <div><b>Esforço total:</b> ${k.total_esforco_hhmm}</div>
-  `;
+function updateChartsWithGrouping() {
+  const groupLimit = parseInt(document.getElementById("groupLimit").value) || 0;
+  renderPies(rawSpeciesData.local, rawSpeciesData.geral, groupLimit);
 }
 
 async function loadDashboard(){
@@ -169,6 +238,7 @@ async function loadDashboard(){
 
   const scopeType = document.getElementById("scopeType").value;
   const scopeValue = document.getElementById("scopeValue").value;
+  const groupLimit = parseInt(document.getElementById("groupLimit").value) || 0;
 
   const hint = document.getElementById("statusHint");
   hint.textContent = "Carregando dados...";
@@ -189,15 +259,26 @@ async function loadDashboard(){
       }
     });
     const json = await resp.json();
-    console.log(json)
+    
     if (!json.success) throw new Error(json.error || "Falha ao carregar dashboard");
 
+    // Armazenar os dados brutos das espécies
+    rawSpeciesData.local = json.pie_especies_local || [];
+    rawSpeciesData.geral = json.pie_especies_geral || [];
+    
     setKpis(json.kpis);
     renderKgPerDay(json.series_captura_dia || []);
-    renderPies(json.pie_especies_local || [], json.pie_especies_geral || []);
-    setSummaryBox(json);
+    
+    // Renderizar gráficos com o limite de agrupamento atual
+    renderPies(rawSpeciesData.local, rawSpeciesData.geral, groupLimit);
+    
+    // setSummaryBox(json);
 
-    hint.textContent = `OK — ${json.kpis.total_desembarques} desembarques aprovados no período.`;
+    // Atualizar hint com contagem de espécies
+    const localCount = rawSpeciesData.local.length;
+    const geralCount = rawSpeciesData.geral.length;
+    hint.textContent = `OK — ${json.kpis.total_desembarques} desembarques aprovados no período. ${localCount} espécies (local) / ${geralCount} espécies (geral).`;
+    
   } catch (e){
     console.error(e);
     hint.textContent = "Erro ao carregar dados do dashboard. Verifique o backend e a autenticação.";
@@ -207,10 +288,19 @@ async function loadDashboard(){
 document.addEventListener("DOMContentLoaded", () => {
   const presetEl = document.getElementById("periodPreset");
   const scopeTypeEl = document.getElementById("scopeType");
+  const groupLimitEl = document.getElementById("groupLimit");
   const btn = document.getElementById("btnApply");
 
   presetEl.addEventListener("change", () => setPreset(presetEl.value));
   scopeTypeEl.addEventListener("change", () => populateScopeValue());
+  
+  // Adicionar listener para o seletor de agrupamento
+  groupLimitEl.addEventListener("change", () => {
+    if (rawSpeciesData.local.length > 0 || rawSpeciesData.geral.length > 0) {
+      updateChartsWithGrouping();
+    }
+  });
+  
   btn.addEventListener("click", loadDashboard);
 
   setPreset(presetEl.value);
