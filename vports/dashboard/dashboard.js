@@ -173,14 +173,14 @@ async function loadDashboard(){
   const hint = document.getElementById("statusHint");
   hint.textContent = "Carregando dados...";
 
-  const url = new URL("/api/dashboard/desembarques", window.location.origin);
+  const url = new URL(DASHBOARD_DESEMBARQUES_URL, window.location.origin);
   url.searchParams.set("start", start);
   url.searchParams.set("end", end);
   url.searchParams.set("scope_type", scopeType);
   if (scopeType !== "geral") url.searchParams.set("scope_value", scopeValue);
 
   try {
-    const resp = await fetch(DASHBOARD_DESEMBARQUES_URL, {
+    const resp = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
