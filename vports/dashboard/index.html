@@ -27,7 +27,7 @@
       </button>
 
       <ul id="navLinks" class="nav-links">
-        <li><a class="nav-link active" href="#">Dashboard</a></li>
+        <li><a class="nav-link active" href="#">Programa de Monitoramento do Desembarque Pesqueiro - PMDP</a></li>
       </ul>
 
       <div class="nav-logo-right">
@@ -111,7 +111,6 @@
         <div class="kpi-value" id="kpiAvgKg">0</div>
       </div>
 
-      <!-- NOVO KPI: Total captura (kg) -->
       <div class="kpi">
         <div class="kpi-title">Total captura (kg)</div>
         <div class="kpi-value" id="kpiTotalKg">0</div>
@@ -127,7 +126,6 @@
         <div class="kpi-value" id="kpiEffortTotal">00:00</div>
       </div>
 
-      <!-- NOVO KPI: CPUE (kg/h) -->
       <div class="kpi">
         <div class="kpi-title" title="Captura por Unidade de Esforço - Quilogramas por hora de pesca">CPUE (kg/h)</div>
         <div class="kpi-value" id="kpiCpue">0</div>
@@ -143,7 +141,17 @@
 
       <div class="card chart-card">
         <h2>Espécies Capturadas</h2>
-        <canvas id="chartEspecies"></canvas>
+
+        <!-- ✅ Wrapper para controlar altura do gráfico -->
+        <div class="chart-wrap">
+          <canvas id="chartEspecies"></canvas>
+        </div>
+
+        <!-- ✅ Texto abaixo do gráfico -->
+        <div class="chart-caption" id="speciesCaption">Especies / Nome vulgar</div>
+
+        <!-- ✅ Nova legenda HTML em 3 colunas -->
+        <div class="legend-grid" id="speciesLegend"></div>
       </div>
 
       <div class="card chart-card">
@@ -157,24 +165,22 @@
 
   <!-- FORÇA OS SCRIPTS ESTAREM SEMPRE ATUALIZADOS -->
   <script>
-    // Função para obter o timestamp atual
     function getTimestamp() {
-        return new Date().getTime();
+      return new Date().getTime();
     }
 
-    // Adicionando o timestamp aos scripts para evitar cache
     const scripts = [
-      "../js/urls.js",      // Configurações de URLs primeiro
+      "../js/urls.js",
       "../form/navbar.js",
       "../auth/public.js",
       "script.js"
     ];
 
     scripts.forEach(script => {
-        const scriptElement = document.createElement('script');
-        scriptElement.src = script + '?v=' + getTimestamp();
-        scriptElement.async = false; // Garantir que os scripts sejam carregados na ordem correta
-        document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
+      const scriptElement = document.createElement('script');
+      scriptElement.src = script + '?v=' + getTimestamp();
+      scriptElement.async = false;
+      document.write(scriptElement.outerHTML);
     });
   </script>
 
