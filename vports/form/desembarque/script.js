@@ -249,8 +249,37 @@ function clearForm() {
   }
 }
 
+function validarCamposObrigatorios() {
+  const campos = [
+    { id: 'embarcacao', nome: 'Embarcação' },
+    { id: 'localDesembarque', nome: 'Local do Desembarque' }
+  ];
+  
+  const camposFaltantes = [];
+  
+  for (const campo of campos) {
+    const elemento = document.getElementById(campo.id);
+    if (!elemento || !elemento.value) {
+      camposFaltantes.push(campo.nome);
+    }
+  }
+  
+  if (camposFaltantes.length > 0) {
+    alert(`❌ Campos obrigatórios não preenchidos:\n${camposFaltantes.join('\n')}`);
+    return false;
+  }
+  
+  return true;
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
+
+  // VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
+  if (!validarCamposObrigatorios()) {
+    return; // Impede o envio
+  }
+
   const form = event.target;
 
   const submitBtn = form.querySelector('.btn-submit');

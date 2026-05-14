@@ -160,3 +160,31 @@ th { background-color: #f2f2f2; font-weight: 600; }
 
 #despesasContainer small { display: inline-block; margin-top: 6px; color: #6c757d; }
 @media (max-width: 420px){ #totalDespesas{ font-size: 15px; } }
+
+/* Campos obrigatórios */
+.required {
+  color: #e74c3c;
+}
+
+.required::after {
+  content: " *";
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* Estilo para campos inválidos */
+input:invalid, select:invalid {
+  border-color: #e74c3c;
+}
+
+/* Mensagem de erro personalizada */
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+  display: none;
+}
+
+.error-message.show {
+  display: block;
+}
