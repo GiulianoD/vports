@@ -65,6 +65,23 @@ async function carregarEmbarcacoes() {
   }
 }
 
+function formatarNomeEmbarcacao(embarcacao) {
+  const nome = embarcacao.nome_embarcacao || 'Sem nome';
+  const rgp = embarcacao.rgp;
+  
+  // Verificar se RGP é válido (não null, não undefined, não vazio, não string "null")
+  const rgpValido = rgp && 
+                    rgp !== 'null' && 
+                    rgp !== 'undefined' && 
+                    rgp.toString().trim() !== '';
+  
+  if (rgpValido) {
+    return `${nome} (${rgp})`;
+  } else {
+    return nome;
+  }
+}
+
 function preencherSelectEmbarcacoes() {
   const selectEmbarcacao = document.getElementById('embarcacao');
   if (!selectEmbarcacao) return;
@@ -81,7 +98,7 @@ function preencherSelectEmbarcacoes() {
   embarcacoesList.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
-    option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
+    option.textContent = formatarNomeEmbarcacao(embarcacao);
     selectEmbarcacao.appendChild(option);
   });
 
@@ -108,13 +125,20 @@ function preencherEmbarcacoesFallback(mensagemErro) {
   selectEmbarcacao.appendChild(errorOption);
 
   const opcoesEstaticas = [
-    { id: 'fallback-1', nome_embarcacao: 'N/A', rgp: '000' }
+    { id: 'fallback-1', nome_embarcacao: 'N/A', rgp: null }  // RGP como null
   ];
   
   opcoesEstaticas.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
-    option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
+    
+    // Verificar se RGP existe
+    if (embarcacao.rgp && embarcacao.rgp !== 'null' && embarcacao.rgp !== 'undefined') {
+      option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
+    } else {
+      option.textContent = embarcacao.nome_embarcacao;
+    }
+    
     selectEmbarcacao.appendChild(option);
   });
 }
