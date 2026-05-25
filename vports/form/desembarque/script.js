@@ -4,33 +4,135 @@
 let embarcacoesList = [];      // lista de embarcações (API)
 
 // =======================================
+// Lista de espécies para o dropdown
+// =======================================
+const especiesList = [
+  "Anchova", "Arraia", "Badejo", "Baiacu", "Barana", "Bere", "Bicuda",
+  "Boca de Velho", "Bonito", "Cabeça dura", "Cabrinha", "Caca", "Cação",
+  "Caçonete", "Camarão perereca", "Camarão rosa", "Camarão sete barbas",
+  "Camurupim", "Caranguejo", "Carapau", "Carapeba", "Caratinga", "Catua",
+  "Chicharro", "Cioba", "Curvina", "Dentão", "Dourado", "Galo", "Garoupa",
+  "Goibira", "Linguado", "Manjuba", "Manjuba Azul", "Mari a Luiza",
+  "Mexilhão", "Pá branco", "Pampo", "Papa terra", "Pargo", "Paru",
+  "Perereca", "Peroá", "Pescada", "Pescada amarela", "Pescadinha",
+  "Rajada", "Rea", "Realito", "Robalo", "Roncador", "Sarda",
+  "Sarda Sororoca", "Sardinha", "Sardinha azul", "Sardinha cascuda",
+  "Sargo", "Siri", "Sururu", "Tainha", "Ubarana", "Vento leste",
+  "Vermelho", "Virote", "Xixarro"
+];
+
+// =======================================
 // Boot
 // =======================================
 document.addEventListener('DOMContentLoaded', function () {
-  // Rodar apenas na página de desembarque (onde existe o formulário)
   const form = document.getElementById('desembarqueForm');
   if (form) {
     initForm();
 
-    // Listeners de esforço
     const inicioEl = document.getElementById('dataInicioPesca');
     const fimEl = document.getElementById('dataFimPesca');
     if (inicioEl) inicioEl.addEventListener('change', calcularEsforco);
     if (fimEl) fimEl.addEventListener('change', calcularEsforco);
 
-    // Envio do formulário
     form.addEventListener('submit', handleSubmit);
-
-    // Carregar embarcações do backend
     carregarEmbarcacoes();
-
-    // Despesas (toggle)
     initDespesasUI();
-
-    // Mapa (Leaflet)
     initFishingMap();
+    
+    // Inicializar dropdowns para todas as linhas existentes
+    initAllEspecieDropdowns();
   }
 });
+
+// =======================================
+// Inicializar dropdown para todas as linhas
+// =======================================
+function initAllEspecieDropdowns() {
+  const especieCells = document.querySelectorAll('#especiesTable tbody td:first-child');
+  especieCells.forEach(cell => {
+    if (!cell.querySelector('select')) {
+      createEspecieSelect(cell);
+    }
+  });
+}
+
+function createEspecieSelect(cell) {
+  // Limpar conteúdo atual
+  cell.innerHTML = '';
+  
+  // Criar select
+  const select = document.createElement('select');
+  select.name = 'especie[]';
+  select.className = 'especie-select';
+  select.required = false;
+  
+  // Opção padrão
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Selecione uma espécie...';
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  select.appendChild(defaultOption);
+  
+  // Adicionar opção "Outro" como PRIMEIRA opção
+  const outroOption = document.createElement('option');
+  outroOption.value = 'Outro';
+  outroOption.textContent = 'Outro (digitar manualmente)';
+  select.appendChild(outroOption);
+  
+  // Adicionar espécies da lista (agora depois do "Outro")
+  especiesList.forEach(especie => {
+    const option = document.createElement('option');
+    option.value = especie;
+    option.textContent = especie;
+    select.appendChild(option);
+  });
+  
+  cell.appendChild(select);
+  
+  // Evento para quando selecionar "Outro"
+  select.addEventListener('change', function() {
+    if (this.value === 'Outro') {
+      // Transformar em input de texto
+      transformToTextInput(cell, select);
+    }
+  });
+}
+
+function transformToTextInput(cell, oldSelect) {
+  // Criar container
+  const container = document.createElement('div');
+  container.className = 'especie-text-container';
+  
+  // Criar input de texto
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.name = 'especie[]';
+  input.placeholder = 'Digite o nome da espécie...';
+  input.className = 'especie-text-input';
+  input.value = '';
+  input.required = false;
+  
+  // Criar botão para voltar ao select
+  const backButton = document.createElement('button');
+  backButton.type = 'button';
+  backButton.textContent = 'Voltar à lista';
+  backButton.className = 'btn-back-to-list';
+  backButton.addEventListener('click', function() {
+    // Recriar o select
+    createEspecieSelect(cell);
+  });
+  
+  container.appendChild(input);
+  container.appendChild(backButton);
+  
+  // Limpar a célula e adicionar o container
+  cell.innerHTML = '';
+  cell.appendChild(container);
+  
+  // Focar no input
+  input.focus();
+}
 
 // =======================================
 // Embarcações (API + preenchimento)
@@ -42,7 +144,6 @@ async function carregarEmbarcacoes() {
   try {
     console.log('Carregando embarcações...');
     
-    // Usar as URLs do arquivo de configuração
     const EMBARCACOES_ATIVAS_URL = window.URLS_CONFIG?.EMBARCACOES_ENDPOINTS?.BASE || '/api/embarcacoes-ativas';
     console.log(EMBARCACOES_ATIVAS_URL)
     
@@ -69,7 +170,6 @@ function formatarNomeEmbarcacao(embarcacao) {
   const nome = embarcacao.nome_embarcacao || 'Sem nome';
   const rgp = embarcacao.rgp;
   
-  // Verificar se RGP é válido (não null, não undefined, não vazio, não string "null")
   const rgpValido = rgp && 
                     rgp !== 'null' && 
                     rgp !== 'undefined' && 
@@ -125,14 +225,13 @@ function preencherEmbarcacoesFallback(mensagemErro) {
   selectEmbarcacao.appendChild(errorOption);
 
   const opcoesEstaticas = [
-    { id: 'fallback-1', nome_embarcacao: 'N/A', rgp: null }  // RGP como null
+    { id: 'fallback-1', nome_embarcacao: 'N/A', rgp: null }
   ];
   
   opcoesEstaticas.forEach((embarcacao) => {
     const option = document.createElement('option');
     option.value = embarcacao.id;
     
-    // Verificar se RGP existe
     if (embarcacao.rgp && embarcacao.rgp !== 'null' && embarcacao.rgp !== 'undefined') {
       option.textContent = `${embarcacao.nome_embarcacao} (${embarcacao.rgp})`;
     } else {
@@ -175,10 +274,12 @@ function addRow() {
   const cell3 = newRow.insertCell(2);
   const cell4 = newRow.insertCell(3);
 
-  cell1.innerHTML = '<input type="text" name="especie[]" placeholder="Nome da espécie">';
   cell2.innerHTML = '<input type="number" name="quantidade[]" min="0" step="0.1" placeholder="Kg">';
   cell3.innerHTML = '<input type="number" name="valorKg[]" min="0" step="0.01" placeholder="0,00" inputmode="decimal">';
   cell4.innerHTML = '<button type="button" class="btn-remove" onclick="removeRow(this)">Remover</button>';
+  
+  // Inicializar select para a nova célula
+  createEspecieSelect(cell1);
 }
 
 function removeRow(button) {
@@ -240,7 +341,7 @@ function calcularEsforco() {
 }
 
 // =======================================
-// Limpar & Enviar formulário
+// Limpar formulário
 // =======================================
 function clearForm() {
   const form = document.getElementById('desembarqueForm');
@@ -251,16 +352,21 @@ function clearForm() {
     document.getElementById('outroDestinacaoContainer')?.classList.add('hidden');
     document.getElementById('outroArtePescaContainer')?.classList.add('hidden');
 
-    // Manter apenas uma linha na tabela
+    // Manter apenas uma linha na tabela e recriar select
     const tbody = document.getElementById('especiesTable')?.getElementsByTagName('tbody')[0];
     if (tbody) {
       while (tbody.rows.length > 1) tbody.deleteRow(1);
+      // Recriar select para a primeira linha
+      const firstCell = tbody.rows[0].cells[0];
+      createEspecieSelect(firstCell);
+      
+      // Limpar outros campos da primeira linha
+      const inputs = tbody.rows[0].querySelectorAll('input[type="number"]');
+      inputs.forEach(input => input.value = '');
     }
 
-    // Resetar select de embarcação
     preencherSelectEmbarcacoes();
 
-    // Despesas
     const has = document.getElementById('hasDespesas');
     const cont = document.getElementById('despesasContainer');
     const val = document.getElementById('totalDespesas');
@@ -268,11 +374,13 @@ function clearForm() {
     if (val) val.value = '';
     if (cont) cont.classList.add('hidden');
 
-    // Mapa
     clearFishingPoint();
   }
 }
 
+// =======================================
+// Validação e envio
+// =======================================
 function validarCamposObrigatorios() {
   const campos = [
     { id: 'embarcacao', nome: 'Embarcação' },
@@ -299,13 +407,31 @@ function validarCamposObrigatorios() {
 async function handleSubmit(event) {
   event.preventDefault();
 
-  // VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
   if (!validarCamposObrigatorios()) {
-    return; // Impede o envio
+    return;
+  }
+  
+  // Validar espécies
+  const especieInputs = document.querySelectorAll('#especiesTable select[name="especie[]"], #especiesTable input[name="especie[]"]');
+  const quantidadeInputs = document.querySelectorAll('#especiesTable input[name="quantidade[]"]');
+  
+  let hasValidSpecies = false;
+  for (let i = 0; i < especieInputs.length; i++) {
+    let especie = especieInputs[i].value.trim();
+    const quantidade = quantidadeInputs[i].value;
+    
+    if (especie && quantidade && parseFloat(quantidade) > 0) {
+      hasValidSpecies = true;
+      break;
+    }
+  }
+  
+  if (!hasValidSpecies) {
+    alert('❌ Adicione pelo menos uma espécie com nome e quantidade válida!');
+    return;
   }
 
   const form = event.target;
-
   const submitBtn = form.querySelector('.btn-submit');
   const originalText = submitBtn ? submitBtn.textContent : null;
 
@@ -316,14 +442,10 @@ async function handleSubmit(event) {
     }
 
     const formData = new FormData(form);
-
-    // Converter FormData para objeto JSON (mesmo padrão do embarcacao.js)
     const jsonData = {};
     
-    // Processar campos do formulário
     for (const [key, value] of formData.entries()) {
       if (jsonData[key]) {
-        // Se a chave já existe, transformar em array
         if (!Array.isArray(jsonData[key])) {
           jsonData[key] = [jsonData[key]];
         }
@@ -333,46 +455,35 @@ async function handleSubmit(event) {
       }
     }
 
-    // Estruturar as espécies em um array de objetos (organizar melhor os dados)
+    // Estruturar espécies
     const especies = [];
-    if (jsonData['especie[]'] && jsonData['quantidade[]'] && jsonData['valorKg[]']) {
-      const especiesArray = Array.isArray(jsonData['especie[]']) ? jsonData['especie[]'] : [jsonData['especie[]']];
-      const quantidadesArray = Array.isArray(jsonData['quantidade[]']) ? jsonData['quantidade[]'] : [jsonData['quantidade[]']];
-      const valoresArray = Array.isArray(jsonData['valorKg[]']) ? jsonData['valorKg[]'] : [jsonData['valorKg[]']];
+    const especiesArray = Array.isArray(jsonData['especie[]']) ? jsonData['especie[]'] : [jsonData['especie[]']];
+    const quantidadesArray = Array.isArray(jsonData['quantidade[]']) ? jsonData['quantidade[]'] : [jsonData['quantidade[]']];
+    const valoresArray = Array.isArray(jsonData['valorKg[]']) ? jsonData['valorKg[]'] : [jsonData['valorKg[]']];
+    
+    for (let i = 0; i < especiesArray.length; i++) {
+      const especieNome = especiesArray[i]?.trim();
+      const quantidade = quantidadesArray[i];
+      const valorKg = valoresArray[i];
       
-      for (let i = 0; i < especiesArray.length; i++) {
-        if (especiesArray[i] && quantidadesArray[i] && valoresArray[i]) {
-          especies.push({
-            especie: especiesArray[i],
-            quantidade: quantidadesArray[i],
-            valor_kg: valoresArray[i]
-          });
-        }
+      if (especieNome && quantidade && parseFloat(quantidade) > 0) {
+        especies.push({
+          especie: especieNome,
+          quantidade: parseFloat(quantidade),
+          valor_kg: valorKg ? parseFloat(valorKg) : 0
+        });
       }
-      
-      // Adicionar array estruturado ao JSON
-      jsonData.especies = especies;
-      
-      // Remover arrays antigos
-      delete jsonData['especie[]'];
-      delete jsonData['quantidade[]'];
-      delete jsonData['valorKg[]'];
     }
+    
+    jsonData.especies = especies;
+    delete jsonData['especie[]'];
+    delete jsonData['quantidade[]'];
+    delete jsonData['valorKg[]'];
 
-    // Processar campos condicionais
-    if (jsonData.destinacao !== 'Outro') {
-      jsonData.outroDestinacao = '';
-    }
-    if (jsonData.artePesca !== 'Outro') {
-      jsonData.outroArtePesca = '';
-    }
+    if (jsonData.destinacao !== 'Outro') jsonData.outroDestinacao = '';
+    if (jsonData.artePesca !== 'Outro') jsonData.outroArtePesca = '';
+    if (!jsonData.hasDespesas || jsonData.hasDespesas === 'off') jsonData.totalDespesas = '';
 
-    // Processar despesas
-    if (!jsonData.hasDespesas || jsonData.hasDespesas === 'off') {
-      jsonData.totalDespesas = '';
-    }
-
-    // Obter informações do usuário logado (mesmo padrão do embarcacao.js)
     const usuario = obterInformacoesUsuario();
     if (!usuario) {
       alert("❌ Você precisa estar logado para registrar um desembarque!");
@@ -380,21 +491,10 @@ async function handleSubmit(event) {
       return;
     }
 
-    console.log(`👤 Usuário logado: ${usuario.nome} (ID: ${usuario.id})`);
+    console.log('📦 JSON enviado:', JSON.stringify(jsonData, null, 2));
 
-    // IMPRIMIR JSON NO CONSOLE (mesmo padrão do embarcacao.js)
-    console.log('📦 JSON enviado na requisição POST /desembarques:');
-    console.log(JSON.stringify(jsonData, null, 2));
-    console.log('👤 Usuário que está registrando:', usuario);
-    console.log('--- Dados brutos:', jsonData);
-
-    // Usar as URLs do arquivo de configuração
     const DESEMBARQUES_URL = window.URLS_CONFIG?.DESEMBARQUES_ENDPOINTS?.BASE || '/api/desembarques';
 
-    console.log('🌐 Enviando dados para:', DESEMBARQUES_URL);
-    console.log('🔐 Token de acesso:', obterAccessToken() ? 'Presente' : 'Ausente');
-
-    // Enviar como JSON em vez de FormData (mesmo padrão do embarcacao.js)
     const response = await fetch(DESEMBARQUES_URL, {
       method: 'POST',
       headers: {
@@ -407,7 +507,6 @@ async function handleSubmit(event) {
     const result = await response.json();
     if (result.success) {
       alert('✅ Desembarque registrado com sucesso!');
-      console.log('Dados salvos:', result.data);
       clearForm();
     } else {
       if (response.status === 401) {
@@ -429,7 +528,7 @@ async function handleSubmit(event) {
 }
 
 // =======================================
-// Despesas — toggle e máscara simples
+// Despesas
 // =======================================
 function initDespesasUI(){
   const hasEl = document.getElementById('hasDespesas');
@@ -445,7 +544,6 @@ function initDespesasUI(){
   hasEl.addEventListener('change', update);
   update();
 
-  // (opcional) normalização de decimal com vírgula
   input.addEventListener('blur', () => {
     if (!input.value) return;
     const val = input.value.replace(',', '.');
@@ -455,18 +553,16 @@ function initDespesasUI(){
 }
 
 // =======================================
-// MAPA — Marcação do local de pesca (Leaflet)
+// MAPA
 // =======================================
 let mapPescaInstance = null;
 let mapPescaMarker = null;
 
-// limites aproximados da Grande Vitória
 const GV_BOUNDS = L.latLngBounds(
-  L.latLng(-20.55, -40.60),  // sudoeste
-  L.latLng(-19.95, -40.00)   // nordeste
+  L.latLng(-20.55, -40.60),
+  L.latLng(-19.95, -40.00)
 );
 
-// ponto e zoom iniciais (Vitória/ES)
 const GV_CENTER = [-20.3155, -40.3128];
 const GV_ZOOM   = 11;
 
@@ -474,7 +570,6 @@ function initFishingMap(){
   const mapEl = document.getElementById('mapPesca');
   if (!mapEl || typeof L === 'undefined') return;
 
-  // Cria mapa
   mapPescaInstance = L.map('mapPesca', {
     center: GV_CENTER,
     zoom: GV_ZOOM,
@@ -483,17 +578,14 @@ function initFishingMap(){
     tap: true
   });
 
-  // Camada base (OpenStreetMap)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(mapPescaInstance);
 
-  // Clique/toque -> define marcador
   mapPescaInstance.on('click', (e) => {
     setFishingPoint(e.latlng.lat, e.latlng.lng);
   });
 
-  // Botões
   const btnClear = document.getElementById('btnLimparMarcacao');
   const btnLocate = document.getElementById('btnMinhaPosicao');
   btnClear?.addEventListener('click', clearFishingPoint);

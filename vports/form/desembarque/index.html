@@ -13,6 +13,7 @@
   <!-- ======== CSS ======== -->
   <link rel="stylesheet" href="style.css?v=1.1">
   <link rel="stylesheet" href="../navbar.css?v=1.1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.7/dist/css/autoComplete.min.css">
 </head>
 <body>
   <!-- NAV: Menu com duas logos e opções centralizadas -->
@@ -94,14 +95,14 @@
         <h2>Dados Básicos</h2>
 
         <div class="form-group">
-          <label for="embarcacao" class="required">Embarcação *</label>
+          <label for="embarcacao" class="required">Embarcação</label>
           <select id="embarcacao" name="embarcacao" required>
             <option value="">Carregando embarcações...</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="localDesembarque" class="required">Local do Desembarque *</label>
+          <label for="localDesembarque" class="required">Local do Desembarque</label>
           <select id="localDesembarque" name="localDesembarque" required>
             <option value="">Selecione um Ponto</option>
           </select>
@@ -276,5 +277,6 @@
         document.write(scriptElement.outerHTML); // Adiciona o script diretamente ao HTML
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.7/dist/autoComplete.min.js"></script>
 </body>
 </html>

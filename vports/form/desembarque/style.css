@@ -188,3 +188,164 @@ input:invalid, select:invalid {
 .error-message.show {
   display: block;
 }
+
+/* =========================================================
+   AUTOCOMPLETE PARA ESPÉCIES
+========================================================= */
+.autoComplete-wrapper {
+  position: static;
+}
+
+.autoComplete-results {
+  position: fixed;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 250px;
+}
+
+.autoComplete-result-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.autoComplete-result-item:hover {
+  background-color: #e8f4fd;
+}
+
+.autoComplete-no-result {
+  padding: 10px 12px;
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Input de espécie com foco */
+.especie-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.especie-input-wrapper {
+  width: 100%;
+}
+
+.especie-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.especie-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Container para o modo "Outro" */
+.outro-especie-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.outro-especie-container .especie-input {
+  flex: 1;
+}
+
+.btn-outro-cancel {
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+  white-space: nowrap;
+}
+
+.btn-outro-cancel:hover {
+  background-color: #7f8c8d;
+}
+
+/* Ajuste para a tabela - garantir que o dropdown não fique cortado */
+.table-container {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+#especiesTable {
+  overflow: visible;
+}
+
+#especiesTable td {
+  position: relative;
+  overflow: visible;
+}
+
+/* =========================================================
+   SELECT/INPUT PARA ESPÉCIES
+========================================================= */
+.especie-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.especie-select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.especie-text-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.especie-text-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.especie-text-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.btn-back-to-list {
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+  white-space: nowrap;
+}
+
+.btn-back-to-list:hover {
+  background-color: #7f8c8d;
+}
