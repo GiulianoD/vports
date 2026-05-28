@@ -57,6 +57,19 @@ def numero_seguro(valor):
     return float(valor)
 
 
+def extrair_lat_lon(coordenadas):
+    if not coordenadas or pd.isna(coordenadas):
+        return "", ""
+
+    texto = str(coordenadas)
+    numeros = re.findall(r"-?\d+\.\d+|-?\d+", texto)
+
+    if len(numeros) >= 2:
+        return numeros[0], numeros[1]
+
+    return "", ""
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--inicio", required=True)
 parser.add_argument("--fim", required=True)
@@ -81,6 +94,7 @@ SELECT
   COALESCE(NULLIF(d.arte_pesca, ''), d.outro_arte_pesca) AS arte_pesca,
   d.data_retorno::date AS data_retorno,
   d.esforco,
+  d.coordenadas,
   item->>'especie' AS especie,
   (item->>'quantidade')::numeric AS captura_kg,
   (item->>'valor_kg')::numeric AS valor_kg,
@@ -275,5 +289,74 @@ with pd.ExcelWriter(saida, engine="xlsxwriter") as writer:
         ws.set_column("K:K", 16)
 
         ws.freeze_panes(1, 0)
+
+    # Aba Mapa de pesca
+    ws_mapa = workbook.add_worksheet("Mapa de pesca")
+
+    mapa_headers = [
+        "Local de desembarque",
+        "Espécie",
+        "Captura (Kg)",
+        "Valor total (R$)",
+        "Arte de Pesca",
+        "Data",
+        "Coordenadas",
+        "Latitude",
+        "Longitude",
+    ]
+
+    for col, header in enumerate(mapa_headers):
+        ws_mapa.write(0, col, header, header_fmt)
+
+    mapa_df = (
+        df
+        .groupby(["local_desembarque", "especie", "coordenadas"], dropna=False)
+        .agg(
+            captura_kg=("captura_kg", "sum"),
+            valor_total=("valor_total", "sum"),
+            arte_pesca=(
+                "arte_pesca",
+                lambda x: ", ".join(
+                    sorted(
+                        set(
+                            str(v).strip()
+                            for v in x
+                            if not pd.isna(v) and str(v).strip()
+                        )
+                    )
+                ),
+            ),
+            data=("data_retorno", "max"),
+        )
+        .reset_index()
+    )
+
+    row = 1
+
+    for _, r in mapa_df.iterrows():
+        lat, lon = extrair_lat_lon(r["coordenadas"])
+
+        ws_mapa.write(row, 0, texto_seguro(r["local_desembarque"]), cell_fmt)
+        ws_mapa.write(row, 1, texto_seguro(r["especie"]), cell_fmt)
+        ws_mapa.write_number(row, 2, numero_seguro(r["captura_kg"]), cell_fmt)
+        ws_mapa.write_number(row, 3, numero_seguro(r["valor_total"]), money_fmt)
+        ws_mapa.write(row, 4, texto_seguro(r["arte_pesca"]), cell_fmt)
+        ws_mapa.write(row, 5, texto_seguro(r["data"]), cell_fmt)
+        ws_mapa.write(row, 6, texto_seguro(r["coordenadas"]), cell_fmt)
+        ws_mapa.write(row, 7, lat, cell_fmt)
+        ws_mapa.write(row, 8, lon, cell_fmt)
+
+        row += 1
+
+    ws_mapa.set_column("A:A", 28)
+    ws_mapa.set_column("B:B", 24)
+    ws_mapa.set_column("C:C", 14)
+    ws_mapa.set_column("D:D", 18)
+    ws_mapa.set_column("E:E", 45)
+    ws_mapa.set_column("F:F", 14)
+    ws_mapa.set_column("G:G", 35)
+    ws_mapa.set_column("H:I", 16)
+
+    ws_mapa.freeze_panes(1, 0)
 
 print(f"Planilha gerada com sucesso: {saida}")
